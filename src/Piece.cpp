@@ -13,10 +13,19 @@ namespace Chess
    Position Piece::position(void) const { return _position; }
    Side Piece::side(void) const { return _side; }
 
-   bool Piece::move(const Position &to, const Board &board, const PieceType promotion_type)
+   bool Piece::can_move(const Position &to, const Board &board, const PieceType promotion_type) const {
+      Piece *p_to = board.find_piece(to);
+      if (p_to && p_to->side() == _side)
+         return false; // Non posso muovermi dove c'è un mio compagno
+
+      return true;
+   }
+
+   bool Piece::move(const Position &to, Board &board, const PieceType promotion_type)
    {
       if (can_move(to, board, promotion_type))
       {
+         board.kill_piece(to);
          _position = to;
          return true;
       }
@@ -38,16 +47,45 @@ namespace Chess
       for (Piece *p : possible_pinning_pieces)
       {
          // Controllo se il pezzo 'p' mi attacca al re
-         Direction p_dir = p->position() - _position;
-         if (king_dir.is_same_line(p_dir))
+         Direction p_dir = my_king->position() - p->position();
+         if (!dir.is_same_line(p_dir))
+            continue;
+         // Se arrivo qua, il pezzo 'p' è allineato a 'this' e al re
+         bool am_i_pinned = true;
+         p_dir = p_dir.reduce();
+         Position curr = p->position() + p_dir;
+         while (curr != my_king->position())
+         {
+            Piece *found = board.find_piece(curr);
+            if (found && *found != *this)
+               am_i_pinned = false;
+         }
+         // Se sono pinnato non posso muovermi
+         if (am_i_pinned)
             return false;
       }
       return true;
    }
 
+   bool Piece::is_obstructed(const Board &board, const Position to, const Direction dir) const {
+      Position curr = _position + dir;
+      while (curr != to)
+      {
+         // Se la vista verso 'to' è ostruita ritorno false
+         if (board.find_piece(curr) != nullptr)
+            return true;
+         curr += dir;
+      }
+      return false;
+   }
+
    bool Piece::operator==(const Piece &piece) const
    {
       return _position == piece._position && _side == piece._side && type() == piece.type();
+   }
+   
+   bool Piece::operator!=(const Piece &piece) const {
+      return !(*this == piece);
    }
 
    bool is_occupied(const Position &pos, const std::vector<Piece *> &pieces)

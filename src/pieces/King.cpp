@@ -7,10 +7,14 @@
 namespace Chess
 {
    King::King(const Position position, const Side side) : Piece(position, side) {}
-   
+
    PieceType King::type(void) const { return KING; }
 
-   bool King::can_move(const Position &to, const Board &board, const PieceType promotion_type) const {}
+   bool King::can_move(const Position &to, const Board &board, const PieceType promotion_type) const
+   {
+      if (!Piece::can_move(to, board, promotion_type))
+         return false;
+   }
 }
 
 #endif

@@ -10,7 +10,11 @@ namespace Chess
 
    PieceType Knight::type(void) const { return KNIGHT; }
 
-   bool Knight::can_move(const Position &to, const Board &board, const PieceType promotion_type) const {}
+   bool Knight::can_move(const Position &to, const Board &board, const PieceType promotion_type) const
+   {
+      if (!Piece::can_move(to, board, promotion_type))
+         return false;
+   }
 }
 
 #endif

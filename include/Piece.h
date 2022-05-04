@@ -36,7 +36,9 @@ namespace Chess
       // Controlla se il pezzo attuale è attaccato (pinnato) al suo re da un pezzo avversario
       // La direzione 'dir' è la direzione in cui il pezzo si sta muovendo
       // Ritorna true se il pezzo può muoversi verso dir, false altrimenti
-      bool can_move_through_pin(const Board& board, const Direction dir) const;
+      bool can_move_through_pin(const Board &board, const Direction dir) const;
+      // Controlla se c'è qualcuno che ostruisce il percorso dalla posizione attuale alla posizione 'to' seguendo la direzione 'dir'
+      bool is_obstructed(const Board &board, const Position to, const Direction dir) const;
 
    public:
       Piece(const Position position, const Side side);
@@ -49,16 +51,17 @@ namespace Chess
       virtual PieceType type(void) const = 0;
 
       // Sposta il pezzo dalla posizione corrente a quella passata per parametro, senza eseguire controlli
-      bool move(const Position &to, const Board &board, const PieceType promotion_type);
+      bool move(const Position &to, Board &board, const PieceType promotion_type);
 
       // Controlla se il pezzo attuale può muoversi alla posizione to
-      virtual bool can_move(const Position &to, const Board &board, const PieceType promotion_type) const = 0;
+      virtual bool can_move(const Position &to, const Board &board, const PieceType promotion_type) const;
 
       // // Ritorna tutte le posizioni possibili in cui il pezzo corrente si potrebbe muovere,
       // //    senza considerare gli altri pezzi nella scacchiera
       // void get_moves(std::vector<Position> &v) const;
 
       bool operator==(const Piece &piece) const;
+      bool operator!=(const Piece &piece) const;
    };
 
    bool is_occupied(const Position &pos, const std::vector<Piece *> &pieces);

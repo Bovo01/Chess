@@ -52,8 +52,6 @@ namespace Chess
       // bool is_check(const Side &side, const std::vector<Piece> &pieces) const;
       // // Ritorna true se il pezzo di partenza è ostruito da un altro pezzo cercando di arrivare alla posizione to
       // bool is_obstructed(const Piece &p, const Position &to, const std::vector<Piece> &pieces) const;
-      // // Metodo che elimina il pezzo alla posizione indicata dal vettore _pieces
-      void kill_piece(const Position &position);
       // Ritorna true il pezzo alla posizione from si può muovere nella posizione to, false altrimenti
       // bool can_move(const Piece &p_from, const Position &to) const;
       // Controlla se il pezzo può essere una promozione valida
@@ -91,6 +89,9 @@ namespace Chess
       // Getter per i pezzi di nero e bianco, in base al side passato e ai filtri dei tipi
       // Copia i pezzi nel vector passato come output
       void get_pieces(Side side, std::vector<PieceType> types, std::vector<Piece *> &output) const;
+
+      // Metodo che elimina il pezzo alla posizione indicata dal vettore _pieces
+      void kill_piece(const Position &position);
 
       // Sposta un pezzo dalla posizione 'from' alla posizione 'to'
       // Lancia una eccezione, se per qualche motivo la mossa non è valida

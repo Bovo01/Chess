@@ -10,7 +10,11 @@ namespace Chess
 
    PieceType Pawn::type(void) const { return PAWN; }
 
-   bool Pawn::can_move(const Position &to, const Board &board, const PieceType promotion_type) const {}
+   bool Pawn::can_move(const Position &to, const Board &board, const PieceType promotion_type) const
+   {
+      if (!Piece::can_move(to, board, promotion_type))
+         return false;
+   }
 }
 
 #endif
