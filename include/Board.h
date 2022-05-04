@@ -43,9 +43,18 @@ namespace Chess
       // Elenco di tutte le posizione avvenute nella scacchiera (per controllare la ripetizione di mosse)
       std::vector<std::vector<Piece *>> _positions;
 
+      /* OTTIMIZZAZIONI */
+      // Elenco dei pezzi sotto forma di matrice (in modo da poter accedere direttamente ad una posizione)
+      Piece ***_pieces_grid;
+      // Re
+      Piece *_white_king;
+      Piece *_black_king;
+
    private:
       // Prepara la posizione iniziale riempiendo il vector _pieces
       void initialize(void);
+      // Copia i pezzi nella griglia
+      void initialize_matrix(void);
       // Cambia il turno
       void toggle_turn(void);
       // // Ritorna true se la posizione corrente ha generato uno scacco al re dello schieramento side

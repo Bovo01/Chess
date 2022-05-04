@@ -40,6 +40,7 @@ namespace Chess
    {
       _pieces.reserve(32);
       initialize();
+      initialize_matrix();
    }
    /*       METODI PRIVATI       */
 
@@ -50,7 +51,8 @@ namespace Chess
       _pieces.push_back(new Knight{"B1", WHITE});
       _pieces.push_back(new Bishop{"C1", WHITE});
       _pieces.push_back(new Queen{"D1", WHITE});
-      _pieces.push_back(new King{"E1", WHITE});
+      _white_king = new King{"E1", WHITE};
+      _pieces.push_back(_white_king);
       _pieces.push_back(new Bishop{"F1", WHITE});
       _pieces.push_back(new Knight{"G1", WHITE});
       _pieces.push_back(new Rook{"H1", WHITE});
@@ -65,12 +67,29 @@ namespace Chess
       _pieces.push_back(new Knight{"B8", BLACK});
       _pieces.push_back(new Bishop{"C8", BLACK});
       _pieces.push_back(new Queen{"D8", BLACK});
-      _pieces.push_back(new King{"E8", BLACK});
+      _black_king = new King{"E8", BLACK};
+      _pieces.push_back(_black_king);
       _pieces.push_back(new Bishop{"F8", BLACK});
       _pieces.push_back(new Knight{"G8", BLACK});
       _pieces.push_back(new Rook{"H8", BLACK});
 
       _positions.push_back(_pieces);
+   }
+
+   void Board::initialize_matrix(void)
+   {
+      _pieces_grid = new Piece **[8];
+      for (int i = 0; i < 8; i++)
+      {
+         _pieces_grid[i] = new Piece *[8];
+         for (int j = 0; j < 8; j++)
+            _pieces_grid[i][j] = nullptr;
+      }
+      for (Piece *p : _pieces)
+      {
+         Position pos = p->position();
+         _pieces_grid[pos.x][pos.y] = p;
+      }
    }
 
    void Board::toggle_turn(void)
@@ -295,7 +314,7 @@ namespace Chess
          os << 8 - i << ' ';
          for (short j = 0; j < 8; j++)
          {
-            Piece *p = b.find_piece({j, (short)(7 - i)});
+            Piece *p = b._pieces_grid[j][7-i];
             if (p)
                os << (p->side() == BLACK ? (char)p->type() : (char)(p->type() + 32));
             else
@@ -324,7 +343,8 @@ namespace Chess
       return nullptr;
    }
 
-   Piece *Board::get_king(const Side side) const {
+   Piece *Board::get_king(const Side side) const
+   {
       auto it = std::find_if(_pieces.begin(),
                              _pieces.end(),
                              [&side](Piece *p)
@@ -343,19 +363,20 @@ namespace Chess
       {
          // TODO Gestisci cose (en passant, arrocco, ...)
          toggle_turn();
+         // TODO Sposta in _pieces_grid
       }
    }
 
-   Ending Board::is_game_over(void) const
-   {
-      if (_50_move_count >= 50)
-         return _50_MOVE_RULE;
-      if (is_insufficient_material())
-         return INSUFFICIENT_MATERIAL;
-      if (is_repetition())
-         return REPETITION;
-      return is_checkmate_stalemate(_turn);
-   }
+   // Ending Board::is_game_over(void) const
+   // {
+   //    if (_50_move_count >= 50)
+   //       return _50_MOVE_RULE;
+   //    if (is_insufficient_material())
+   //       return INSUFFICIENT_MATERIAL;
+   //    if (is_repetition())
+   //       return REPETITION;
+   //    return is_checkmate_stalemate(_turn);
+   // }
 }
 
 #endif

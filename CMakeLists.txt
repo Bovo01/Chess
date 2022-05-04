@@ -19,6 +19,8 @@ add_library(pawn include/pieces/pawn.h src/pieces/pawn.cpp)
 
 
 add_executable(scacchiera executables/scacchiera.cpp src/position.cpp src/piece.cpp src/board.cpp )
-add_executable(test executables/test.cpp)
+add_executable(test executables/test.cpp src/position.cpp src/piece.cpp src/board.cpp 
+         src/pieces/king.cpp src/pieces/queen.cpp src/pieces/rook.cpp src/pieces/bishop.cpp src/pieces/knight.cpp src/pieces/pawn.cpp)
 
 target_link_libraries(scacchiera position direction piece king queen rook bishop knight pawn board )
+target_link_libraries(test position direction piece king queen rook bishop knight pawn board )
