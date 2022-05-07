@@ -42,6 +42,35 @@ namespace Chess
       initialize();
       initialize_matrix();
    }
+
+   Board::Board(const Board &other)
+   {
+      // TODO Costruttore di copia, copia profonda di _positions, _pieces, _pieces_grid
+   }
+   /*       DISTRUTORI           */
+
+   Board::~Board()
+   {
+      // Elimino tutti i pezzi
+      for (Piece *p : _pieces)
+      {
+         delete p;
+      }
+      // Elimino la griglia
+      for (Piece ***row = _pieces_grid; row != _pieces_grid + 8; ++row)
+      {
+         delete[] row[0];
+      }
+      delete[] _pieces_grid;
+      // Elimino l'elenco delle posizioni
+      for (std::vector<Piece *> position : _positions)
+      {
+         for (Piece *p : position)
+         {
+            delete p;
+         }
+      }
+   }
    /*       METODI PRIVATI       */
 
    void Board::initialize(void)
@@ -88,7 +117,7 @@ namespace Chess
       for (Piece *p : _pieces)
       {
          Position pos = p->position();
-         _pieces_grid[pos.x][pos.y] = p;
+         _pieces_grid[pos.y][pos.x] = p;
       }
    }
 
@@ -121,8 +150,129 @@ namespace Chess
       {
          _pieces.erase(std::find_if(_pieces.begin(), _pieces.end(), [&position](Piece *p)
                                     { return p->position() == position; }));
+         delete p;
       }
    }
+
+   bool Board::is_check(const Side &side) const
+   {
+      return is_check(side, _pieces);
+   }
+
+   bool Board::is_check(const Side &side, const std::vector<Piece *> &pieces) const
+   {
+      for (Piece *p : pieces)
+      {
+         if (p->side() != side && p->is_giving_check(*this))
+            return true;
+      }
+      return false;
+   }
+
+   std::vector<Piece *> &Board::whos_giving_check(const Side &side, std::vector<Piece *> &output) const
+   {
+      return whos_giving_check(side, _pieces, output);
+   }
+
+   std::vector<Piece *> &Board::whos_giving_check(const Side &side, const std::vector<Piece *> &pieces, std::vector<Piece *> &output) const
+   {
+      // Svuoto l'output in caso ci sia qualche disturbo
+      output.clear();
+      for (Piece *p : pieces)
+      {
+         if (p->side() != side && p->is_giving_check(*this))
+            output.push_back(p);
+      }
+      return output;
+   }
+
+   std::vector<Position> &Board::cells_to_block_check(const Side &side, std::vector<Position> &output) const
+   {
+      return cells_to_block_check(side, _pieces, output);
+   }
+
+   std::vector<Position> &Board::cells_to_block_check(const Side &side, const std::vector<Piece *> &pieces, std::vector<Position> &output) const
+   {
+      // Svuoto l'output in caso ci sia qualche disturbo
+      output.clear();
+      std::vector<Piece *> pieces_that_give_check;
+      whos_giving_check(side, pieces, pieces_that_give_check);
+      return cells_to_block_check(side, pieces, pieces_that_give_check, output);
+   }
+
+   std::vector<Position> &Board::cells_to_block_check(const Side &side, const std::vector<Piece *> &pieces, const std::vector<Piece *> &pieces_that_give_check, std::vector<Position> &output) const
+   {
+      if (pieces_that_give_check.size() != 1)
+         return output; // Se ci sono più pezzi che fanno scacco o non è scacco => lo scacco non si può bloccare
+      Piece *checking_piece = pieces_that_give_check[0];
+      switch (checking_piece->type())
+      {
+      case PAWN:
+      case KNIGHT:
+         return output; // Lo scacco non può essere bloccato
+      case BISHOP:
+      case ROOK:
+      case QUEEN:
+      {
+         Piece *king = get_king(side);
+         Direction king_dir = (king->position() - checking_piece->position()).reduce();
+         Position curr = checking_piece->position() + king_dir;
+         while (curr != king->position())
+         {
+            output.push_back(curr);
+            curr += king_dir;
+         }
+         return output;
+      }
+      case KING:
+         throw "Si è rotto qualcosa";
+      default:
+         throw "Si è rotto qualcosa";
+      }
+   }
+
+   std::vector<Position> &Board::cells_to_block_check(const std::vector<Piece *> &pieces_that_give_check, const Side &side, std::vector<Position> &output) const
+   {
+      return cells_to_block_check(side, _pieces, pieces_that_give_check, output);
+   }
+
+   std::vector<Position> &Board::uncontrolled_positions(const Side &side, const std::vector<Position> &positions_to_check, std::vector<Position> &output) const
+   {
+      // Svuoto l'output in caso ci sia qualche disturbo
+      output.clear();
+      output.reserve(positions_to_check.size());
+      // Copio tutte le posizioni da controllare in output
+      for (const Position pos : positions_to_check)
+         output.push_back(pos);
+      for (Piece *p : _pieces)
+      {
+         if (p->side() != side)
+            continue;
+         // Quando le posizioni sono tutte controllate da side le ritorno
+         if (output.size() == 0)
+            return output;
+         // Controllo tutte le posizioni ancora possibili
+         for (int i = output.size() - 1; i >= 0; i--)
+         {
+            if (p->is_controlling(*this, output[i]))
+               output.erase(output.begin() + i); // Se la posizione corrente è controllata la elimino dal vector output
+         }
+      }
+      return output;
+   }
+
+   bool Board::can_castle(const Side &side, const short direction) const
+   {
+      short filter = 0b0;
+      if (direction < 0)
+         filter = 0b1000; // Torre 'A'
+      else
+         filter = 0b0100; // Torre 'H'
+      if (side == BLACK)
+         filter = filter >> 2; // Sposto i due bit a destra
+      return (filter & _castling_permissions) != 0;
+   }
+
    /*       GETTERS       */
 
    Side Board::turn(void) const
@@ -151,6 +301,11 @@ namespace Chess
                                                { return pt == p->type(); }) != types.end())
             output.push_back(p);
       }
+   }
+
+   short Board::get_en_passant_column() const
+   {
+      return _last_pawn_move;
    }
 
    /* CONTROLLO FINALI */
@@ -314,9 +469,9 @@ namespace Chess
          os << 8 - i << ' ';
          for (short j = 0; j < 8; j++)
          {
-            Piece *p = b._pieces_grid[j][7-i];
+            Piece *p = b._pieces_grid[7 - i][j];
             if (p)
-               os << (p->side() == BLACK ? (char)p->type() : (char)(p->type() + 32));
+               os << (p->side() == WHITE ? (char)p->type() : (char)(p->type() + 32));
             else
                os << ' ';
          }
@@ -332,28 +487,12 @@ namespace Chess
 
    Piece *Board::find_piece(const Position &position) const
    {
-      auto it = std::find_if(_pieces.begin(),
-                             _pieces.end(),
-                             [&position](Piece *p)
-                             {
-                                return p->position() == position;
-                             });
-      if (it != _pieces.end())
-         return *it;
-      return nullptr;
+      return _pieces_grid[position.y][position.x];
    }
 
    Piece *Board::get_king(const Side side) const
    {
-      auto it = std::find_if(_pieces.begin(),
-                             _pieces.end(),
-                             [&side](Piece *p)
-                             {
-                                return p->type() == KING && p->side() == side;
-                             });
-      if (it != _pieces.end())
-         return *it;
-      return nullptr;
+      return side == WHITE ? _white_king : _black_king;
    }
 
    void Board::move(const Position from, const Position to, const PieceType promotion_type)
@@ -361,7 +500,7 @@ namespace Chess
       Piece *p_from = find_piece(from);
       if (p_from->move(to, *this, promotion_type))
       {
-         // TODO Gestisci cose (en passant, arrocco, ...)
+         // TODO Gestisci cose (en passant, arrocco, aggiornamento _last_pawn_move, ...)
          toggle_turn();
          // TODO Sposta in _pieces_grid
       }

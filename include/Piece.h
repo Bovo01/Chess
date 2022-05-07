@@ -37,6 +37,8 @@ namespace Chess
       // La direzione 'dir' è la direzione in cui il pezzo si sta muovendo
       // Ritorna true se il pezzo può muoversi verso dir, false altrimenti
       bool can_move_through_pin(const Board &board, const Direction dir) const;
+      // Controlla se il pezzo si può mouvere alla destinazione 'to' in caso di scacco da parte dell'avversario
+      bool can_move_through_check(const Board &board, const Position to) const;
       // Controlla se c'è qualcuno che ostruisce il percorso dalla posizione attuale alla posizione 'to' seguendo la direzione 'dir'
       bool is_obstructed(const Board &board, const Position to, const Direction dir) const;
 
@@ -51,10 +53,16 @@ namespace Chess
       virtual PieceType type(void) const = 0;
 
       // Sposta il pezzo dalla posizione corrente a quella passata per parametro, senza eseguire controlli
-      bool move(const Position &to, Board &board, const PieceType promotion_type);
+      virtual bool move(const Position &to, Board &board, const PieceType promotion_type);
 
       // Controlla se il pezzo attuale può muoversi alla posizione to
       virtual bool can_move(const Position &to, const Board &board, const PieceType promotion_type) const;
+
+      // Controlla se questo pezzo sta dando scacco al re avversario
+      virtual bool is_giving_check(const Board &board) const = 0;
+
+      // Controlla se il pezzo corrente sta controllando (ossia "vede") la casa 'to'
+      virtual bool is_controlling(const Board &board, const Position &to) const = 0;
 
       // // Ritorna tutte le posizioni possibili in cui il pezzo corrente si potrebbe muovere,
       // //    senza considerare gli altri pezzi nella scacchiera

@@ -18,6 +18,10 @@ namespace Chess
 
    bool Direction::is_bishop_direction() const { return abs(x) == abs(y); }
    bool Direction::is_rook_direction() const { return x == 0 || y == 0; }
+   bool Direction::is_knight_direction() const
+   {
+      return (abs(x) == 1 && abs(y) == 2) || (abs(x) == 2 && abs(y) == 1);
+   }
 
    bool Direction::is_same_line(const Direction other) const
    {

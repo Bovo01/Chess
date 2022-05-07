@@ -18,6 +18,8 @@ namespace Chess
       bool is_bishop_direction() const;
       // Ritorna true se questa direzione può essere percorsa da una torre
       bool is_rook_direction() const;
+      // Ritorna true se questa direzione può essere percorsa da un cavallo
+      bool is_knight_direction() const;
 
       // Ritorna true se l'altra direzione è equivalente (non considera il verso)
       bool is_same_line(const Direction other) const;

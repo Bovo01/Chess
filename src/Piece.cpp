@@ -13,7 +13,10 @@ namespace Chess
    Position Piece::position(void) const { return _position; }
    Side Piece::side(void) const { return _side; }
 
-   bool Piece::can_move(const Position &to, const Board &board, const PieceType promotion_type) const {
+   bool Piece::can_move(const Position &to, const Board &board, const PieceType promotion_type) const
+   {
+      if (to == Position{0, 0})
+         return false; // Non sto muovendo il pezzo
       Piece *p_to = board.find_piece(to);
       if (p_to && p_to->side() == _side)
          return false; // Non posso muovermi dove c'è un mio compagno
@@ -25,6 +28,7 @@ namespace Chess
    {
       if (can_move(to, board, promotion_type))
       {
+         // TODO Controlla condizioni arrocco (se sto mangiando torre)
          board.kill_piece(to);
          _position = to;
          return true;
@@ -67,7 +71,24 @@ namespace Chess
       return true;
    }
 
-   bool Piece::is_obstructed(const Board &board, const Position to, const Direction dir) const {
+   bool Piece::can_move_through_check(const Board &board, const Position to) const
+   {
+      std::vector<Piece *> pieces_that_give_check;
+      board.whos_giving_check(_side, pieces_that_give_check);
+      if (pieces_that_give_check.size() == 0)
+         return true; // Non è scacco
+      std::vector<Position> blocking_positions;
+      board.cells_to_block_check(pieces_that_give_check, _side, blocking_positions);
+      for (const Position &pos : blocking_positions)
+      {
+         if (pos == to)
+            return true; // La posizione in cui mi voglio muovere è una di quelle che blocca lo scacco
+      }
+      return false; // Non posso bloccare lo scacco
+   }
+
+   bool Piece::is_obstructed(const Board &board, const Position to, const Direction dir) const
+   {
       Position curr = _position + dir;
       while (curr != to)
       {
@@ -83,8 +104,9 @@ namespace Chess
    {
       return _position == piece._position && _side == piece._side && type() == piece.type();
    }
-   
-   bool Piece::operator!=(const Piece &piece) const {
+
+   bool Piece::operator!=(const Piece &piece) const
+   {
       return !(*this == piece);
    }
 
