@@ -5,6 +5,12 @@
 #include <ostream>
 #include "Position.h"
 #include "Piece.h"
+#include "Rook.h"
+#include "Knight.h"
+#include "Bishop.h"
+#include "Queen.h"
+#include "King.h"
+#include "Pawn.h"
 
 namespace Chess
 {
@@ -50,8 +56,12 @@ namespace Chess
       // Elenco dei pezzi sotto forma di matrice (in modo da poter accedere direttamente ad una posizione)
       Piece ***_pieces_grid;
       // Re
-      Piece *_white_king;
-      Piece *_black_king;
+      King *_white_king;
+      King *_black_king;
+      // Scacco
+      // TODO Gestisci variabile scacco
+      short _is_check{0b00};
+      // TODO Ottimizza whos_giving_check (aggiungi vector) e cells_to_block_check
 
    private:
       // Prepara la posizione iniziale riempiendo il vector _pieces
@@ -60,10 +70,12 @@ namespace Chess
       void initialize_matrix(void);
       // Cambia il turno
       void toggle_turn(void);
-      // // Ritorna true se il pezzo di partenza è ostruito da un altro pezzo cercando di arrivare alla posizione to
-      // bool is_obstructed(const Piece &p, const Position &to, const std::vector<Piece> &pieces) const;
-      // // Ritorna true il pezzo alla posizione from si può muovere nella posizione to, false altrimenti
-      // bool can_move(const Piece &p_from, const Position &to) const;
+      // Inizializza la partita a partire da FEN (https://it.wikipedia.org/wiki/Notazione_Forsyth-Edwards)
+      void initialize_FEN(std::string FEN);
+   // // Ritorna true se il pezzo di partenza è ostruito da un altro pezzo cercando di arrivare alla posizione to
+   // bool is_obstructed(const Piece &p, const Position &to, const std::vector<Piece> &pieces) const;
+   // // Ritorna true il pezzo alla posizione from si può muovere nella posizione to, false altrimenti
+   // bool can_move(const Piece &p_from, const Position &to) const;
       // Controlla se il pezzo può essere una promozione valida
       bool is_valid_promotion_type(const PieceType &type);
 
@@ -78,6 +90,8 @@ namespace Chess
    public:
       // Costruttore che inizializza una partita
       Board();
+      // Costruttore che inizializza una partita tramite FEN (https://it.wikipedia.org/wiki/Notazione_Forsyth-Edwards)
+      Board(std::string FEN);
       // Costruttore di copia
       Board(const Board &other);
       // Distruttore che libera la memoria dai puntatori
@@ -91,10 +105,15 @@ namespace Chess
       // Cerca il pezzo ad una certa posizione e lo ritorna
       Piece *find_piece(const Position &position) const;
       // Cerca il re di un certo schieramento e lo ritorna
-      Piece *get_king(const Side side) const;
+      King *get_king(const Side side) const;
 
       // Getter per il turno attuale
       Side turn(void) const;
+
+      // Sposta in modo forzato un pezzo
+      void change_position(const Position &from, const Position &to);
+      // Sposta in modo forzato un pezzo
+      void change_position(Piece *p, const Position &to);
 
       // Getter per i pezzi di nero e bianco, in base al side passato
       // Copia i pezzi nel vector passato come output
@@ -113,7 +132,15 @@ namespace Chess
 
       // Sposta un pezzo dalla posizione 'from' alla posizione 'to'
       // Lancia una eccezione, se per qualche motivo la mossa non è valida
-      void move(const Position from, const Position to, const PieceType promotion_type = PieceType::KING);
+      bool move(const Position from, const Position to, const PieceType promotion_type = PieceType::KING);
+
+      /* FUNZIONI PER IL MOVE */
+      void update_last_pawn_move(const Piece *p, const Position &from);
+      void update_50_move_rule(const Piece *p, const bool eaten);
+      void promote(Piece *p, PieceType promotion_type);
+      PieceType request_promotion_type() const;
+      void create_new_piece(const PieceType type, const Position pos, const Side side);
+      /* FINE FUNZIONI PER IL MOVE */
 
       // Ritorna 'Ending::NONE = 0' se la partita non è finita, altrimenti ritorna il modo in cui è finita la partita
       // Controlla solo il giocatore del side = _turn
@@ -145,6 +172,9 @@ namespace Chess
       /*    ARROCCO    */
       // Controlla se il re dello schieramento side può arroccare (ossia non ha perso il diritto di farlo) verso la direzione 'direction' (viene considerato il segno di direction)
       bool can_castle(const Side &side, const short direction) const;
+      // Rimuove il diritto di arrocco per un certo schieramento 'side' in una certa direzione 'direction'
+      // La direzione può essere positiva (per la torre 'H'), negativa (per la torre 'A') o zero (per entrambe le torri)
+      void lose_castling(const Side &side, const short direction);
    };
 }
 

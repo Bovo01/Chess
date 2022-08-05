@@ -1,14 +1,9 @@
 #ifndef BOARD_CPP
 #define BOARD_CPP
 
+#include <iostream>
 #include <algorithm>
 #include "Board.h"
-#include "Rook.h"
-#include "Knight.h"
-#include "Bishop.h"
-#include "Queen.h"
-#include "King.h"
-#include "Pawn.h"
 
 namespace Chess
 {
@@ -43,6 +38,15 @@ namespace Chess
       initialize_matrix();
    }
 
+   // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
+   Board::Board(std::string FEN)
+       : _pieces(std::vector<Piece *>())
+   {
+      initialize_matrix();
+      initialize_FEN(FEN);
+   }
+
+
    Board::Board(const Board &other)
    {
       // TODO Costruttore di copia, copia profonda di _positions, _pieces, _pieces_grid
@@ -53,22 +57,19 @@ namespace Chess
    {
       // Elimino tutti i pezzi
       for (Piece *p : _pieces)
-      {
          delete p;
-      }
       // Elimino la griglia
-      for (Piece ***row = _pieces_grid; row != _pieces_grid + 8; ++row)
+      for (int i = 0; i < 8; i++)
       {
-         delete[] row[0];
+         delete[] _pieces_grid[i];
       }
       delete[] _pieces_grid;
       // Elimino l'elenco delle posizioni
       for (std::vector<Piece *> position : _positions)
       {
          for (Piece *p : position)
-         {
-            delete p;
-         }
+            if (p)
+               delete p;
       }
    }
    /*       METODI PRIVATI       */
@@ -121,6 +122,74 @@ namespace Chess
       }
    }
 
+   void Board::initialize_FEN(std::string FEN)
+   {
+      // Imposto la posizione di tutti i pezzi
+      short x = 0, y = 7;
+      for (char c : FEN) {
+         if (c == ' ') {
+            break;
+         } else if (c == '/') {
+            y--;
+            x = 0;
+         } else if (isdigit(c)) {
+            x += c - '0';
+         } else if (isalpha(c)) {
+            create_new_piece(static_cast<PieceType>(toupper(c)), {x, y}, isupper(c) ? WHITE : BLACK);
+            if (c == 'k') {
+               _black_king = (King *) find_piece({x, y});
+            } else if (c == 'K') {
+               _white_king = (King *) find_piece({x, y});
+            }
+            x++;
+         } else {
+            throw "Invalid FEN format";
+         }
+      }
+      // Gestione turno
+      int index = FEN.find(' ') + 1;
+      if (FEN[index] == 'w') {
+         _turn = WHITE;
+      } else if (FEN[index] == 'b') {
+         _turn = BLACK;
+      } else {
+         throw "Invalid FEN format";
+      }
+      // Gestione arrocco
+      index += 2;
+      int len = FEN.substr(index).find(' ');
+      short castling = 0b0000;
+      for (int i = index; i < index + len; i++) {
+         switch (FEN[i]) {
+            case 'K':
+               castling |= 0b0100;
+               break;
+            case 'Q':
+               castling |= 0b1000;
+               break;
+            case 'k':
+               castling |= 0b0001;
+               break;
+            case 'q':
+               castling |= 0b0010;
+               break;
+            case '-':
+               break;
+            default:
+               throw "Invalid FEN format";
+         }
+      }
+      // Gestione en passant
+      index += len + 1;
+      if (FEN[index] == '-') {
+         _last_pawn_move = -1;
+      } else {
+         Position behind_pos{FEN.substr(index, 2)};
+         _last_pawn_move = behind_pos.x;
+      }
+   }
+
+
    void Board::toggle_turn(void)
    {
       _turn = !_turn;
@@ -151,6 +220,7 @@ namespace Chess
          _pieces.erase(std::find_if(_pieces.begin(), _pieces.end(), [&position](Piece *p)
                                     { return p->position() == position; }));
          delete p;
+         _pieces_grid[position.y][position.x] = nullptr;
       }
    }
 
@@ -240,7 +310,7 @@ namespace Chess
    {
       // Svuoto l'output in caso ci sia qualche disturbo
       output.clear();
-      output.reserve(positions_to_check.size());
+      output.reserve(positions_to_check.size() + 1);
       // Copio tutte le posizioni da controllare in output
       for (const Position pos : positions_to_check)
          output.push_back(pos);
@@ -263,14 +333,32 @@ namespace Chess
 
    bool Board::can_castle(const Side &side, const short direction) const
    {
-      short filter = 0b0;
+      short filter;
       if (direction < 0)
          filter = 0b1000; // Torre 'A'
       else
          filter = 0b0100; // Torre 'H'
       if (side == BLACK)
-         filter = filter >> 2; // Sposto i due bit a destra
+         filter >>= 2; // Sposto i due bit a destra
       return (filter & _castling_permissions) != 0;
+   }
+
+   void Board::lose_castling(const Side &side, const short direction)
+   {
+      short filter;
+      // Prendo il filtro in base al BIANCO
+      if (direction == 0)
+         filter = 0b0011; // Entrambe le torri
+      else if (direction < 0)
+         filter = 0b0111; // Torre 'A'
+      else
+         filter = 0b1011; // Torre 'H'
+      if (side == BLACK)
+      {
+         filter >>= 2;
+         filter |= 0b1100;
+      }
+      _castling_permissions &= filter;
    }
 
    /*       GETTERS       */
@@ -381,50 +469,38 @@ namespace Chess
       return true;
    }
    // TODO Fixa codice finali
-   // Ending Board::is_checkmate_stalemate(const Side &side) const
-   // {
-   //    // Controllo se il re ha mosse legali
-   //    Piece* king = *std::find_if(_pieces.begin(), _pieces.end(), [&side](Piece *p)
-   //                                     { return p->type() == KING && p->side() == side; });
-   //    std::vector<Position> moves;
-   //    king.get_moves(moves);
-   //    // Controllo le mosse del re all'inizio per una questione di ottimizzazione
-   //    for (const Position &pos : moves)
-   //    {
-   //       // Se il re ha mosse legali la partita non è finita
-   //       if (can_move(king, pos))
-   //          return NONE;
-   //    }
-   //    // Controllo se ci sono mosse legali tra tutti pezzi di side
-   //    for (const Piece &p : _pieces)
-   //    {
-   //       if (p.type() == KING || p.side() != side)
-   //          continue;
-
-   //       std::vector<Position> moves;
-   //       p.get_moves(moves);
-   //       for (const Position &pos : moves)
-   //       {
-   //          // Se il pezzo ha mosse legali la partita non è finita
-   //          if (can_move(p, pos))
-   //          {
-   //             can_move(p, pos);
-   //             return NONE;
-   //          }
-   //       }
-   //    }
-
-   //    // Se non ci sono mosse legali è scacco matto o stallo
-
-   //    if (is_check(side, _pieces)) /* Scacco matto */
-   //    {
-   //       if (side == WHITE)
-   //          return BLACK_CHECKMATE; // Il nero ha mattato il bianco
-   //       return WHITE_CHECKMATE;    // Il bianco ha mattato il nero
-   //    }
-   //    // Altrimenti stallo
-   //    return STALEMATE;
-   // }
+   Ending Board::is_checkmate_stalemate(const Side &side) const
+   {
+      // Controllo se il re ha mosse legali
+      King *king = get_king(side);
+      if (king->has_legal_moves_ignore_checks(*this))
+         return Ending::NONE;
+      
+      std::vector<Piece *> giving_check;
+      whos_giving_check(side, giving_check);
+      if (giving_check.size() > 1) { // è scacco doppio, e il re non ha mosse legali (è matto)
+         return side == WHITE ? BLACK_CHECKMATE : WHITE_CHECKMATE;
+      } else if (giving_check.size() == 1) { // è scacco
+         std::vector<Position> cells_to_block;
+         cells_to_block_check(giving_check, side, cells_to_block);
+         cells_to_block.push_back(giving_check[0]->position()); // Aggiungo come posizione bloccante la posizione del nemico, in modo da poterlo mangiare
+         for (const Piece *p : _pieces) {
+            if (p->side() != side || p->type() == KING)
+               continue;
+            if (p->can_counter_check(*this, cells_to_block))
+               return Ending::NONE;
+         }
+         return side == WHITE ? BLACK_CHECKMATE : WHITE_CHECKMATE;
+      } else { // NON è scacco, potrebbe essere stallo
+         for (const Piece *p : _pieces) {
+            if (p->side() != side || p->type() == KING)
+               continue;
+            if (p->has_legal_moves_ignore_checks(*this))
+               return Ending::NONE;
+         }
+         return STALEMATE;
+      }
+   }
 
    // bool Board::is_repetition(void) const
    // {
@@ -490,20 +566,135 @@ namespace Chess
       return _pieces_grid[position.y][position.x];
    }
 
-   Piece *Board::get_king(const Side side) const
+   King *Board::get_king(const Side side) const
    {
       return side == WHITE ? _white_king : _black_king;
    }
 
-   void Board::move(const Position from, const Position to, const PieceType promotion_type)
+   void Board::change_position(const Position &from, const Position &to)
    {
-      Piece *p_from = find_piece(from);
-      if (p_from->move(to, *this, promotion_type))
+      Piece *p = find_piece(from);
+      change_position(p, to);
+   }
+
+   void Board::change_position(Piece *p, const Position &to)
+   {
+      Position &p_pos = p->position();
+      _pieces_grid[p_pos.y][p_pos.x] = nullptr;
+      _pieces_grid[to.y][to.x] = p;
+      p_pos = to;
+   }
+
+   bool Board::move(const Position from, const Position to, const PieceType promotion_type)
+   {
+      Piece *p = find_piece(from);
+      bool eaten = find_piece(to) != nullptr;
+      if (p->move(to, *this, promotion_type))
       {
-         // TODO Gestisci cose (en passant, arrocco, aggiornamento _last_pawn_move, ...)
+         // Gestisco l'en passant per la prossima mossa
+         update_last_pawn_move(p, from);
+         // Aggiorno la regola delle 50 mosse
+         update_50_move_rule(p, eaten);
+         // Promuovo se necessario
+         promote(p, promotion_type);
+         // Cambio turno
          toggle_turn();
-         // TODO Sposta in _pieces_grid
+
+         return true;
       }
+      return false;
+   }
+
+   void Board::update_last_pawn_move(const Piece *p, const Position &from)
+   {
+      if (p->type() == PAWN && abs((from - p->position()).y) == 2)
+         _last_pawn_move = p->position().x; // Ho appena avanzato un pedone di 2 => imposto la sua colonna come possibile en passant
+      else
+         _last_pawn_move = -1; // Non può essere eseguito en passant la prossima mossa
+   }
+
+   void Board::update_50_move_rule(const Piece *p, const bool eaten)
+   {
+      if (eaten || p->type() == PAWN)
+      {
+         // Reset della regola delle 50 mosse
+         _50_move_count = 1;
+         _50_move_start = p->side();
+      }
+      else
+      {
+         // Incremento periodo 50 mosse
+         if (_50_move_start == p->side())
+            _50_move_count++;
+      }
+   }
+
+   void Board::promote(Piece *p, PieceType promotion_type)
+   {
+      if (p->type() == PAWN)
+      {
+         const short promotion_row = p->side() == WHITE ? 7 : 0;
+         if (p->position().y == promotion_row)
+         {
+            while (promotion_type == KING || promotion_type == PAWN) // Forzo l'utente a scegliere una promozione
+               promotion_type = request_promotion_type();
+            // Sto promuovendo
+            Position promotion_pos = p->position();
+            Side promotion_side = p->side();
+            kill_piece(promotion_pos);
+            create_new_piece(promotion_type, promotion_pos, promotion_side);
+         }
+      }
+   }
+
+   PieceType Board::request_promotion_type() const
+   {
+      std::cout << "Inserisci il pezzo a cui vuoi promuovere: ";
+      char in;
+      std::cin >> in;
+      switch (std::tolower(in))
+      {
+      case 'p':
+         return PAWN;
+      case 'c':
+         return KNIGHT;
+      case 'a':
+         return BISHOP;
+      case 't':
+         return ROOK;
+      case 'd':
+         return QUEEN;
+      default:
+         return KING;
+      }
+   }
+
+   void Board::create_new_piece(const PieceType type, const Position pos, const Side side)
+   {
+      Piece *p;
+      switch (type)
+      {
+      case QUEEN:
+         p = new Queen(pos, side);
+         break;
+      case ROOK:
+         p = new Rook(pos, side);
+         break;
+      case BISHOP:
+         p = new Bishop(pos, side);
+         break;
+      case KNIGHT:
+         p = new Knight(pos, side);
+         break;
+      case PAWN:
+         p = new Pawn(pos, side);
+         break;
+      case KING: // Spero che non debba succedere
+         p = new King(pos, side);
+         break;
+      }
+      _pieces.push_back(p);
+      _pieces_grid[pos.y][pos.x] = p;
    }
 
    // Ending Board::is_game_over(void) const
