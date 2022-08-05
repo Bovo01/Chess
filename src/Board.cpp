@@ -487,7 +487,7 @@ namespace Chess
          for (const Piece *p : _pieces) {
             if (p->side() != side || p->type() == KING)
                continue;
-            if (p->can_counter_check(*this, cells_to_block))
+            if (p->can_block_check(*this, cells_to_block))
                return Ending::NONE;
          }
          return side == WHITE ? BLACK_CHECKMATE : WHITE_CHECKMATE;

@@ -40,7 +40,7 @@ namespace Chess
       return true;
    }
 
-   bool King::can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const
+   bool King::can_block_check(const Board &board, const std::vector<Position> cells_to_block_check) const
    {
       return false;
    }

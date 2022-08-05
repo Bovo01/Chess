@@ -63,7 +63,7 @@ namespace Chess
       virtual bool can_move(const Position &to, const Board &board) const;
 
       // Controlla se il pezzo attuale può bloccare lo scacco, ossia muoversi in almeno una delle posizioni in 'cells_to_block_check'
-      virtual bool can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const = 0;
+      virtual bool can_block_check(const Board &board, const std::vector<Position> cells_to_block_check) const = 0;
 
       // Controlla se questo pezzo sta dando scacco al re avversario
       bool is_giving_check(const Board &board) const;

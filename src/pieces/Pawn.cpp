@@ -46,7 +46,7 @@ namespace Chess
       return true;
    }
 
-   bool Pawn::can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const
+   bool Pawn::can_block_check(const Board &board, const std::vector<Position> cells_to_block_check) const
    {
       for (const Position to : cells_to_block_check) {
          Direction diff = to - _position;

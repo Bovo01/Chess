@@ -27,7 +27,7 @@ namespace Chess
       return true;
    }
 
-   bool Queen::can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const
+   bool Queen::can_block_check(const Board &board, const std::vector<Position> cells_to_block_check) const
    {
       for (const Position to : cells_to_block_check)
       {
