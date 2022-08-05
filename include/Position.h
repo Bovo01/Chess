@@ -12,14 +12,13 @@ namespace Chess
       short x, y;
 
    private:
-      // Controlla se l'oggetto è valido (x e y compresi tra 0 e 7)
-      bool is_valid(void) const;
       // Converte la notazione aritmetica (A1, B7, H6, ...) e inizializza le variabili private
       //    alle coordinate corrette ({0, 0}, {6, 1}, {5, }, ...)
-      // Lancia una 'InvalidPositionException' se la posizione inserita non è valida
       void decode_arithmetic_notation(const std::string &arithmetic_notation);
 
    public:
+      // Costruttore vuoto
+      Position();
       // Inizializza l'oggetto controllando la validità delle coordinate
       Position(const short x, const short y);
       // Inizializza l'oggetto tramite il metodo privato 'decode_arithmetic_notation'
@@ -28,14 +27,11 @@ namespace Chess
       // Passo un 'const char *' per avere una conversione implicita che con una stringa non avrei
       Position(const char *arithmetic_notation);
 
-      // Eccezione che indica che la posizione non è valida
-      class InvalidPositionException
-      {
-      };
+      // Controlla se l'oggetto è valido (x e y compresi tra 0 e 7)
+      bool is_valid(void) const;
 
       // Ritorna una nuova posizione data dall'incremento di quella corrente
       //    con le coordinate passate per parametro
-      // Lancia una 'InvalidPositionException' se la posizione inserita non è valida
       Position move(const short x_increment, const short y_increment) const;
 
       // Operatore di sottrazione

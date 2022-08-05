@@ -17,21 +17,13 @@ namespace Chess
 
    void Position::decode_arithmetic_notation(const std::string &arithmetic_notation)
    {
-      if (arithmetic_notation.size() != 2)
-         throw InvalidPositionException();
-
       x = std::tolower(arithmetic_notation[0]) - 97;
       y = arithmetic_notation[1] - 49;
-
-      if (!(is_valid()))
-         throw InvalidPositionException();
    }
 
-   Position::Position(const short x, const short y) : x(x), y(y)
-   {
-      if (!(is_valid()))
-         throw InvalidPositionException();
-   }
+   Position::Position() : Position(0, 0) {}
+
+   Position::Position(const short x, const short y) : x(x), y(y) {}
 
    Position::Position(const std::string arithmetic_notation)
    {
