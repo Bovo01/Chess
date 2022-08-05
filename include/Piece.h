@@ -19,18 +19,18 @@ namespace Chess
    enum PieceType
    {
       PAWN = 'P',
-      KNIGHT = 'C',
-      BISHOP = 'A',
-      ROOK = 'T',
-      QUEEN = 'D',
-      KING = 'R'
+      KNIGHT = 'N',
+      BISHOP = 'B',
+      ROOK = 'R',
+      QUEEN = 'Q',
+      KING = 'K'
    };
    // Classe Piece che rappresenta un pezzo in tutte le sue caratteristiche
    class Piece
    {
    protected:
       Position _position;
-      Side _side;
+      const Side _side;
 
    protected:
       // Controlla se il pezzo attuale è attaccato (pinnato) al suo re da un pezzo avversario
@@ -47,22 +47,36 @@ namespace Chess
 
       // Getter di _position
       Position position(void) const;
+      // Getter non const di _position
+      Position &position(void);
       // Getter di _side
       Side side(void) const;
       // Getter di _type
       virtual PieceType type(void) const = 0;
+      
+
 
       // Sposta il pezzo dalla posizione corrente a quella passata per parametro, senza eseguire controlli
       virtual bool move(const Position &to, Board &board, const PieceType promotion_type);
 
       // Controlla se il pezzo attuale può muoversi alla posizione to
-      virtual bool can_move(const Position &to, const Board &board, const PieceType promotion_type) const;
+      virtual bool can_move(const Position &to, const Board &board) const;
+
+      // Controlla se il pezzo attuale può bloccare lo scacco, ossia muoversi in almeno una delle posizioni in 'cells_to_block_check'
+      virtual bool can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const = 0;
 
       // Controlla se questo pezzo sta dando scacco al re avversario
-      virtual bool is_giving_check(const Board &board) const = 0;
+      bool is_giving_check(const Board &board) const;
 
       // Controlla se il pezzo corrente sta controllando (ossia "vede") la casa 'to'
       virtual bool is_controlling(const Board &board, const Position &to) const = 0;
+
+      // Rimuove i permessi d'arrocco allo schieramento avversario se e quando viene mangiata una torre
+      void remove_castling_permissions(Board &board, const Position &to) const;
+
+      // Controlla se questo pezzo ha delle mosse legali senza controllare se il re è sotto scacco
+      // Il re non ignora gli scacchi
+      virtual bool has_legal_moves_ignore_checks(const Board &board) const = 0;
 
       // // Ritorna tutte le posizioni possibili in cui il pezzo corrente si potrebbe muovere,
       // //    senza considerare gli altri pezzi nella scacchiera
@@ -71,8 +85,6 @@ namespace Chess
       bool operator==(const Piece &piece) const;
       bool operator!=(const Piece &piece) const;
    };
-
-   bool is_occupied(const Position &pos, const std::vector<Piece *> &pieces);
 
    Side operator!(const Side &side);
 }

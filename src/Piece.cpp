@@ -11,29 +11,46 @@ namespace Chess
        : _position(position), _side(side) {}
 
    Position Piece::position(void) const { return _position; }
+   Position &Piece::position(void) { return _position; }
    Side Piece::side(void) const { return _side; }
 
-   bool Piece::can_move(const Position &to, const Board &board, const PieceType promotion_type) const
+
+   bool Piece::can_move(const Position &to, const Board &board) const
    {
-      if (to == Position{0, 0})
+      if (to == _position)
          return false; // Non sto muovendo il pezzo
       Piece *p_to = board.find_piece(to);
       if (p_to && p_to->side() == _side)
          return false; // Non posso muovermi dove c'è un mio compagno
 
-      return true;
+      return true; // Mancano altri controlli che vengono fatti per ogni singolo pezzo separatamente
    }
 
    bool Piece::move(const Position &to, Board &board, const PieceType promotion_type)
    {
-      if (can_move(to, board, promotion_type))
+      if (can_move(to, board))
       {
-         // TODO Controlla condizioni arrocco (se sto mangiando torre)
+         remove_castling_permissions(board, to);
          board.kill_piece(to);
-         _position = to;
+         board.change_position(_position, to);
          return true;
       }
       return false;
+   }
+
+   void Piece::remove_castling_permissions(Board &board, const Position &to) const
+   {
+      // Controllo se 'to' è in un angolo della scacchiera
+      if ((to.x != 0 && to.x != 7) || (to.y != 0 && to.y != 7))
+         return;
+      // Controllo se sto mangiando sulla riga iniziale dell'avversario
+      const short initial_enemy_row = !_side == WHITE ? 0 : 7;
+      if (to.y != initial_enemy_row)
+         return;
+      // Se sto mangiando una torre rimuovo l'arrocco in quella direzione
+      Piece *p = board.find_piece(to);
+      if (p && p->type() == ROOK)
+         board.lose_castling(!_side, to.x - 1); // to.x-1 è positivo (=6) per la torre 'H', negativo (=-1) per la torre 'A'
    }
 
    bool Piece::can_move_through_pin(const Board &board, const Direction dir) const
@@ -42,7 +59,7 @@ namespace Chess
       Direction king_dir = my_king->position() - _position;
       if (!king_dir.is_bishop_direction() && !king_dir.is_rook_direction())
          return true; // Il percorso tra questo pezzo e il re non può essere percorso nè da un alfiere nè da una torre => nessuno può pinnare il pezzo corrente => il pezzo si muove liberamente
-      if (king_dir.is_same_line(dir))
+      if (king_dir.is_same_line(dir)) // TODO Fix per il cavallo
          return true; // La destinazione 'dir' ha stessa direzione rispetto al re => il pezzo si muove liberamente in questa direzione
       // Ottengo tutti i pezzi che potrebbero attaccare questo pezzo al re
       std::vector<PieceType> possible_pinning_types = {QUEEN, BISHOP, ROOK};
@@ -73,10 +90,14 @@ namespace Chess
 
    bool Piece::can_move_through_check(const Board &board, const Position to) const
    {
+      if (!board.is_check(_side))
+         return true; // Non è scacco
       std::vector<Piece *> pieces_that_give_check;
       board.whos_giving_check(_side, pieces_that_give_check);
-      if (pieces_that_give_check.size() == 0)
-         return true; // Non è scacco
+      if (pieces_that_give_check.size() != 1 && type() != KING)
+         return false; // Doppio scacco, non può essere bloccato
+      if (pieces_that_give_check[0]->position() == to)
+         return true; // Mangio chi mi dà scacco
       std::vector<Position> blocking_positions;
       board.cells_to_block_check(pieces_that_give_check, _side, blocking_positions);
       for (const Position &pos : blocking_positions)
@@ -100,6 +121,14 @@ namespace Chess
       return false;
    }
 
+   bool Piece::is_giving_check(const Board &board) const
+   {
+      Piece *enemy_king = board.get_king(!_side);
+      if (is_controlling(board, enemy_king->position()))
+         return true;
+      return false;
+   }
+
    bool Piece::operator==(const Piece &piece) const
    {
       return _position == piece._position && _side == piece._side && type() == piece.type();
@@ -108,13 +137,6 @@ namespace Chess
    bool Piece::operator!=(const Piece &piece) const
    {
       return !(*this == piece);
-   }
-
-   bool is_occupied(const Position &pos, const std::vector<Piece *> &pieces)
-   {
-      auto it = std::find_if(pieces.begin(), pieces.end(), [&pos](const Piece *p)
-                             { return p->position() == pos; });
-      return it != pieces.end();
    }
 
    Side operator!(const Side &side)
