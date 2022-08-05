@@ -10,9 +10,9 @@ namespace Chess
 
    PieceType Knight::type(void) const { return KNIGHT; }
 
-   bool Knight::can_move(const Position &to, const Board &board, const PieceType promotion_type) const
+   bool Knight::can_move(const Position &to, const Board &board) const
    {
-      if (!Piece::can_move(to, board, promotion_type))
+      if (!Piece::can_move(to, board))
          return false;
       // Controllo se il pezzo vede la posizione di destinazione
       if (!is_controlling(board, to))
@@ -26,6 +26,17 @@ namespace Chess
          return false;
       return true;
    }
+
+   bool Knight::can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const
+   {
+      for (const Position to : cells_to_block_check) {
+         Direction diff = to - _position;
+         if (is_controlling(board, to) && can_move_through_pin(board, diff))
+            return true;
+      }
+      return false;
+   }
+
    bool Knight::is_controlling(const Board &board, const Position &to) const
    {
       Direction diff = to - _position;
@@ -35,13 +46,23 @@ namespace Chess
       return true;
    }
 
-   bool Knight::is_giving_check(const Board &board) const
+   bool Knight::has_legal_moves_ignore_checks(const Board &board) const
    {
-      Piece *enemy_king = board.get_king(!_side);
-      Direction king_dir = enemy_king->position() - _position;
-      if (!king_dir.is_knight_direction())
-         return false;
-      return true;
+      for (short i = -2; i <= 2; i += 4) {
+         for (short j = -1; j <= 1; j += 2) {
+            // Direzione i, j
+            Direction dir = {i, j};
+            Position to = _position + dir;
+            if (to.is_valid() && Piece::can_move(to, board) && is_controlling(board, to) && can_move_through_pin(board, dir))
+               return true;
+            // Direzione j, i
+            dir = {j, i};
+            to = _position + dir;
+            if (to.is_valid() && Piece::can_move(to, board) && is_controlling(board, to) && can_move_through_pin(board, dir))
+               return true;
+         }
+      }
+      return false;
    }
 }
 

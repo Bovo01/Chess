@@ -10,9 +10,9 @@ namespace Chess
 
    PieceType Bishop::type(void) const { return BISHOP; }
 
-   bool Bishop::can_move(const Position &to, const Board &board, const PieceType promotion_type) const
+   bool Bishop::can_move(const Position &to, const Board &board) const
    {
-      if (!Piece::can_move(to, board, promotion_type))
+      if (!Piece::can_move(to, board))
          return false;
       // Controllo se il pezzo vede la posizione di destinazione
       if (!is_controlling(board, to))
@@ -27,7 +27,18 @@ namespace Chess
       return true;
    }
 
-   bool Bishop::is_controlling(const Board &board, const Position &to) const {
+   bool Bishop::can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const
+   {
+      for (const Position to : cells_to_block_check) {
+         Direction dir = (to - _position).reduce();
+         if (is_controlling(board, to) && can_move_through_pin(board, dir))
+            return true;
+      }
+      return false;
+   }
+
+   bool Bishop::is_controlling(const Board &board, const Position &to) const
+   {
       Direction diff = to - _position;
       // Controllo se ci posso arrivare
       if (!diff.is_bishop_direction())
@@ -39,15 +50,24 @@ namespace Chess
       return true;
    }
 
-   bool Bishop::is_giving_check(const Board &board) const
+   bool Bishop::has_legal_moves_ignore_checks(const Board &board) const
    {
-      Piece *enemy_king = board.get_king(!_side);
-      Direction king_dir = enemy_king->position() - _position;
-      if (!king_dir.is_bishop_direction())
-         return false;
-      if (is_obstructed(board, enemy_king->position(), king_dir.reduce()))
-         return false;
-      return true;
+      for (short i = -1; i <= 1; i += 2) {
+         for (short j = -1; j <= 1; j += 2) {
+            Direction dir{i, j};
+            Position to = _position + dir;
+            while (to.is_valid()) {
+               if (!is_obstructed(board, to, dir)) {
+                  if (Piece::can_move(to, board) && can_move_through_pin(board, dir))
+                     return true;
+               }
+               else
+                  break;
+               to += dir;
+            }
+         }
+      }
+      return false;
    }
 }
 

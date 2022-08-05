@@ -10,10 +10,23 @@ namespace Chess
    public:
       Rook(const Position position, const Side side);
 
+      /* Implementazione funzioni della super classe */
+
       PieceType type(void) const;
-      bool can_move(const Position &to, const Board &board, const PieceType promotion_type) const;
+      bool can_move(const Position &to, const Board &board) const;
+      bool can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const;
       bool is_controlling(const Board &board, const Position &to) const;
-      bool is_giving_check(const Board &board) const;
+
+      bool has_legal_moves_ignore_checks(const Board &board) const;
+
+      /* Modifica move TODO */
+
+      bool move(const Position &to, Board &board, const PieceType promotion_type);
+
+      /* Funzioni aggiuntive per torre */
+
+      // Rimuove i permessi d'arrocco per il movimento di questa torre
+      void remove_castling_permissions(Board &board, const Position &from) const;
    };
 }
 

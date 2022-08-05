@@ -13,17 +13,46 @@ namespace Chess
 
    PieceType Pawn::type(void) const { return PAWN; }
 
-   bool Pawn::move(const Position &to, Board &board, const PieceType promotion_type) {
-      // TODO pawn move
+   bool Pawn::move(const Position &to, Board &board, const PieceType promotion_type)
+   {
+      if (can_move(to, board))
+      {
+         remove_castling_permissions(board, to);
+         Direction diff = to - _position;
+         Piece *p_to = board.find_piece(to);
+         if (diff.is_bishop_direction() && p_to == nullptr)
+            board.kill_piece({to.x, _position.y}); // mangio in en passant
+         else
+            board.kill_piece(to); // mangio normalmente
+         board.change_position(_position, to);
+         return true;
+      }
+      return false;
    }
 
-   bool Pawn::can_move(const Position &to, const Board &board, const PieceType promotion_type) const
+   bool Pawn::can_move(const Position &to, const Board &board) const
    {
-      if (!Piece::can_move(to, board, promotion_type))
+      if (!Piece::can_move(to, board))
          return false;
       // Controllo se può raggiungere la posizione di destinazione
-      if (can_reach(board, to))
-         return true;
+      if (!can_reach(board, to))
+         return false;
+      // Controllo se sono pinnato al re
+      if (!can_move_through_pin(board, to - _position))
+         return false;
+      // Controllo se è scacco e se mi posso muovere
+      if (!can_move_through_check(board, to))
+         return false;
+      return true;
+   }
+
+   bool Pawn::can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const
+   {
+      for (const Position to : cells_to_block_check) {
+         Direction diff = to - _position;
+         if (can_reach(board, to) && can_move_through_pin(board, diff))
+            return true;
+      }
       return false;
    }
 
@@ -68,11 +97,9 @@ namespace Chess
    bool Pawn::is_en_passant(const Board &board, const Position &to) const
    {
       const short en_passant_row = _side == WHITE ? 4 : 3;
-      if (to.y != en_passant_row)
+      if (_position.y != en_passant_row)
          return false; // Il pedone non è nella riga giusta per eseguire en passant
       const short en_passant_column = board.get_en_passant_column();
-      if (en_passant_column == -1)
-         return false; // L'ultima mossa non è stato avanzato un pedone di 2
       if (to.x != en_passant_column)
          return false; // L'en passant non è possibile nella colonna in cui si sta spostando il pedone
       return true;
@@ -88,11 +115,32 @@ namespace Chess
       return false;
    }
 
-   bool Pawn::is_giving_check(const Board &board) const
+   bool Pawn::has_legal_moves_ignore_checks(const Board &board) const
    {
-      Piece *enemy_king = board.get_king(!_side);
-      if (is_controlling(board, enemy_king->position()))
-         return true;
+      // Push di 1
+      Position to = _position.move(0, _pawn_direction);
+      {
+         if (Piece::can_move(to, board) && can_reach(board, to) && can_move_through_pin(board, to - _position))
+            return true;
+      }
+      // Push di 2
+      to = _position.move(0, 2 * _pawn_direction);
+      if (to.is_valid()) {
+         if (Piece::can_move(to, board) && can_reach(board, to) && can_move_through_pin(board, to - _position))
+            return true;
+      }
+      // Mangia a destra (verso 'H')
+      to = _position.move(1, _pawn_direction);
+      if (to.is_valid()) {
+         if (Piece::can_move(to, board) && can_reach(board, to) && can_move_through_pin(board, to - _position))
+            return true;
+      }
+      // Mangia a sinistra (verso 'A')
+      to = _position.move(-1, _pawn_direction);
+      if (to.is_valid()) {
+         if (Piece::can_move(to, board) && can_reach(board, to) && can_move_through_pin(board, to - _position))
+            return true;
+      }
       return false;
    }
 }

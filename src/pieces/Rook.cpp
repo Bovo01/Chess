@@ -10,9 +10,20 @@ namespace Chess
 
    PieceType Rook::type(void) const { return ROOK; }
 
-   bool Rook::can_move(const Position &to, const Board &board, const PieceType promotion_type) const
+   bool Rook::move(const Position &to, Board &board, const PieceType promotion_type)
    {
-      if (!Piece::can_move(to, board, promotion_type))
+      const Position from = _position;
+      if (Piece::move(to, board, promotion_type))
+      {
+         remove_castling_permissions(board, from); // Se la torre si è mossa, rimuovo i permessi di arrocco
+         return true;
+      }
+      return false;
+   }
+
+   bool Rook::can_move(const Position &to, const Board &board) const
+   {
+      if (!Piece::can_move(to, board))
          return false;
       // Controllo se il pezzo vede la posizione di destinazione
       if (!is_controlling(board, to))
@@ -26,7 +37,29 @@ namespace Chess
          return false;
       return true;
    }
-   bool Rook::is_controlling(const Board &board, const Position &to) const {
+
+   bool Rook::can_counter_check(const Board &board, const std::vector<Position> cells_to_block_check) const
+   {
+      for (const Position to : cells_to_block_check) {
+         Direction dir = (to - _position).reduce();
+         if (is_controlling(board, to) && can_move_through_pin(board, dir))
+            return true;
+      }
+      return false;
+   }
+
+   void Rook::remove_castling_permissions(Board &board, const Position &from) const
+   {
+      const short initial_row = _side == WHITE ? 0 : 7;
+      if (from.y != initial_row)
+         return; // La torre non è nella riga iniziale
+      if (from.x != 0 && from.x != 7)
+         return;                                        // La torre non è nella colonna iniziale
+      board.lose_castling(_side, from.x == 0 ? -1 : 1); // Potrei fare 'from.x - 1' (come secondo parametro) ma sarebbe parecchio losco
+   }
+
+   bool Rook::is_controlling(const Board &board, const Position &to) const
+   {
       Direction diff = to - _position;
       // Controllo se ci posso arrivare
       if (!diff.is_rook_direction())
@@ -38,15 +71,35 @@ namespace Chess
       return true;
    }
 
-   bool Rook::is_giving_check(const Board &board) const
+   bool Rook::has_legal_moves_ignore_checks(const Board &board) const
    {
-      Piece *enemy_king = board.get_king(!_side);
-      Direction king_dir = enemy_king->position() - _position;
-      if (!king_dir.is_rook_direction())
-         return false;
-      if (is_obstructed(board, enemy_king->position(), king_dir.reduce()))
-         return false;
-      return true;
+      for (short i = -1; i <= 1; i += 2) {
+         // Direzione orizzontale
+         Direction dir{i, 0};
+         Position to = _position + dir;
+         while (to.is_valid()) {
+            if (!is_obstructed(board, to, dir)) {
+               if (Piece::can_move(to, board) && can_move_through_pin(board, dir))
+                  return true;
+            }
+            else
+               break;
+            to += dir;
+         }
+         // Direzione verticale
+         dir = {0, i};
+         to = _position + dir;
+         while (to.is_valid()) {
+            if (!is_obstructed(board, to, dir)) {
+               if (Piece::can_move(to, board) && can_move_through_pin(board, dir))
+                  return true;
+            }
+            else
+               break;
+            to += dir;
+         }
+      }
+      return false;
    }
 }
 
