@@ -7,6 +7,7 @@ using namespace Chess;
 
 
 void turn_test();
+void castling_test();
 
 int main() {
    // Board b{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
@@ -14,8 +15,9 @@ int main() {
    // Board b{"rnb1kb1r/ppppqppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 b kq - 5 4"};
    // Board b{"rnb1kb2/ppppqppr/5n2/4p2p/4P3/3B1N1P/PPPP1PP1/RNBQ1RK1 b q - 2 6"};
    // Board b{"rnbqkbnr/ppp1ppp1/7p/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"};
-   
+
    turn_test();
+   castling_test();
 
 
 
@@ -42,7 +44,39 @@ void turn_test() {
    assert(b.move("B8", "C6") == true);
    assert(b.move("C3", "B1") == true);
    assert(b.move("E8", "C8") == true);
-   cout << b << endl;
-   
-   cout << "\n\n--------------------------TURN TEST SUCCESSFUL--------------------------\n\n";
+
+   cout << "\n--------------------------TURN TEST SUCCESSFUL--------------------------\n";
+}
+
+void castling_test() {
+   // Arrocco semplice
+   Board b{"rnbqk2r/pppp1ppp/3b1n2/4p3/4P3/3B1N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"};
+   assert(b.move("E1", "G1") == true);
+   assert(b.move("E8", "G8") == true);
+   // Perdita di arrocco muovendo la torre
+   b = Board{"rnbqk2r/pppp1ppp/3b1n2/4p3/4P3/3B1N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"};
+   assert(b.move("H1", "G1") == true);
+   assert(b.move("H8", "G8") == true);
+   assert(b.move("G1", "H1") == true);
+   assert(b.move("G8", "H8") == true);
+   assert(b.move("E1", "G1") == false);
+   // Perdita di arrocco perdendo la torre
+   b = Board{"rnbqk2r/pppp1Np1/3b1n2/4p2p/4P3/3B4/PPPP1PPP/RNBQK2R w KQkq - 0 6"};
+   assert(b.move("F7", "H8") == true);
+   assert(b.move("E8", "G8") == false);
+   assert(b.move("E8", "F8") == true);
+   assert(b.move("E1", "G1") == true);
+   // Arrocco lungo
+   b = Board{"r3k2r/pbppqNp1/1pnb1n2/4p2p/4P3/1PNB1Q2/PBPP1PPP/R3K2R w KQkq - 3 10"};
+   assert(b.move("E1", "C1") == true);
+   assert(b.move("E8", "C8") == false); // Arrocco impossibile perchè controllato dal cavallo
+   assert(b.move("E8", "G8") == true);
+   // Arrocco mentre si è sotto scacco
+   b = Board{"r3k2r/pbppq1p1/1pnN1n2/4p2p/4P3/1PNB1Q2/PBPP1PPP/R3K2R b KQkq - 0 10"};
+   assert(b.move("E8", "G8") == false);
+   assert(b.move("E8", "C8") == false);
+   assert(b.move("E8", "F7") == false);
+   assert(b.move("E8", "F8") == true);
+
+   cout << "\n--------------------------CASTLING TEST SUCCESSFUL--------------------------\n";
 }

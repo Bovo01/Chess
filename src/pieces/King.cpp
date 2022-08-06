@@ -54,14 +54,17 @@ namespace Chess
          return false; // Non posso muovere il re di oltre 2 case in orizzontale (sono 2 nel caso di arrocco)
       std::vector<Position> positions_to_check;
       positions_to_check.push_back(to);
-      if (abs(diff.x == 2))
+      if (abs(diff.x) == 2)
       {
+         if (diff.y != 0)
+            return false;
          if (!board.can_castle(_side, diff.x))
             return false; // Controllo arrocco
          Position mid_position = _position + diff.reduce();
          if (board.find_piece(mid_position) != nullptr)
             return false; // Lo spazio tra il re e la destinazione deve essere libero
          positions_to_check.push_back(mid_position);
+         positions_to_check.push_back(_position);
       }
       std::vector<Position> uncontrolled_positions(positions_to_check.size());
       board.uncontrolled_positions(!_side, positions_to_check, uncontrolled_positions);
