@@ -76,6 +76,10 @@ namespace Chess
          // Se arrivo qua, il pezzo 'p' è allineato a 'this' e al re e non mi sto muovendo nella direzione del pin (basta controllare che non ci siano altri pezzi in mezzo)
          bool am_i_pinned = true;
          p_dir = p_dir.reduce();
+         if (p->type() == ROOK && !p_dir.is_rook_direction())
+            continue;
+         if (p->type() == BISHOP && !p_dir.is_bishop_direction())
+            continue;
          Position curr = p->position() + p_dir;
          while (curr != my_king->position())
          {
