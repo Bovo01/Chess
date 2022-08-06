@@ -64,6 +64,11 @@ namespace Chess
       }
       return false;
    }
+
+   Piece *Knight::clone() const
+   {
+      return new Knight(_position, _side);
+   }
 }
 
 #endif

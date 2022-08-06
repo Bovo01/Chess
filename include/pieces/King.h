@@ -19,6 +19,7 @@ namespace Chess
       bool is_giving_check(const Board &board) const;
 
       bool has_legal_moves_ignore_checks(const Board &board) const;
+      Piece *clone() const;
 
       /* Modifica move */
 

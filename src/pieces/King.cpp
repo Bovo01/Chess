@@ -122,6 +122,11 @@ namespace Chess
       }
       return false;
    }
+
+   Piece *King::clone() const
+   {
+      return new King(_position, _side);
+   }
 }
 
 #endif

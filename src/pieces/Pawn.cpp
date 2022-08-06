@@ -143,6 +143,11 @@ namespace Chess
       }
       return false;
    }
+
+   Piece *Pawn::clone() const
+   {
+      return new Pawn(_position, _side);
+   }
 }
 
 #endif

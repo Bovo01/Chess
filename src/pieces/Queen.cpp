@@ -72,6 +72,11 @@ namespace Chess
       }
       return false;
    }
+
+   Piece *Queen::clone() const
+   {
+      return new Queen(_position, _side);
+   }
 }
 
 #endif

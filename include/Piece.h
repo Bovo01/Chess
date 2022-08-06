@@ -6,7 +6,8 @@
 
 namespace Chess
 {
-   // Dichiaro la classe Board in modo da poterla usare all'interno di Piece
+   /* Dichiaro la classe Board in modo da poterla usare all'interno di Piece */
+
    class Board;
 
    // Enum che rappresenta lo schieramento di un pezzo
@@ -53,8 +54,6 @@ namespace Chess
       Side side(void) const;
       // Getter di _type
       virtual PieceType type(void) const = 0;
-      
-
 
       // Sposta il pezzo dalla posizione corrente a quella passata per parametro, senza eseguire controlli
       virtual bool move(const Position &to, Board &board, const PieceType promotion_type);
@@ -81,6 +80,8 @@ namespace Chess
       // // Ritorna tutte le posizioni possibili in cui il pezzo corrente si potrebbe muovere,
       // //    senza considerare gli altri pezzi nella scacchiera
       // void get_moves(std::vector<Position> &v) const;
+
+      virtual Piece *clone() const = 0;
 
       bool operator==(const Piece &piece) const;
       bool operator!=(const Piece &piece) const;

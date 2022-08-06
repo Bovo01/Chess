@@ -101,6 +101,11 @@ namespace Chess
       }
       return false;
    }
+
+   Piece *Rook::clone() const
+   {
+      return new Rook(_position, _side);
+   }
 }
 
 #endif

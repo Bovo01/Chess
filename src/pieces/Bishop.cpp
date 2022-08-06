@@ -69,6 +69,11 @@ namespace Chess
       }
       return false;
    }
+
+   Piece *Bishop::clone() const
+   {
+      return new Bishop(_position, _side);
+   }
 }
 
 #endif

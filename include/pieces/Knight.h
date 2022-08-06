@@ -16,6 +16,7 @@ namespace Chess
       bool is_controlling(const Board &board, const Position &to) const;
       
       bool has_legal_moves_ignore_checks(const Board &board) const;
+      Piece *clone() const;
    };
 }
 
