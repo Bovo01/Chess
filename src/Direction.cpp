@@ -11,7 +11,14 @@ namespace Chess
 
    Direction Direction::reduce() const
    {
-      return {(short)(x / abs(x)), (short)(y / abs(y))};
+      if (x == 0 && y == 0)
+         return {0, 0};
+      else if (x == 0)
+         return {0, (short)(y / abs(y))};
+      else if (y == 0)
+         return {(short)(x / abs(x)), 0};
+      else
+         return {(short)(x / abs(x)), (short)(y / abs(y))};
    }
 
    Direction Direction::opposite() const { return {(short)(-x), (short)(-y)}; }
