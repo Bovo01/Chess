@@ -8,6 +8,9 @@ using namespace Chess;
 
 void turn_test();
 void castling_test();
+void pawn_test();
+void en_passant_test();
+void promotion_test();
 
 int main() {
    // Board b{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
@@ -16,9 +19,9 @@ int main() {
    // Board b{"rnb1kb2/ppppqppr/5n2/4p2p/4P3/3B1N1P/PPPP1PP1/RNBQ1RK1 b q - 2 6"};
    // Board b{"rnbqkbnr/ppp1ppp1/7p/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"};
 
-   turn_test();
-   castling_test();
-
+   // turn_test();
+   // castling_test();
+   pawn_test();
 
 
    return 0;
@@ -79,4 +82,42 @@ void castling_test() {
    assert(b.move("E8", "F8") == true);
 
    cout << "\n--------------------------CASTLING TEST SUCCESSFUL--------------------------\n";
+}
+
+void pawn_test() {
+   en_passant_test();
+   promotion_test();
+
+   cout << "\n--------------------------PAWN TEST SUCCESSFUL--------------------------\n";
+}
+void en_passant_test() {
+   // Classico en passant
+   Board b{"rnbqkbnr/pppp1ppp/4p3/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2"};
+   b.move("D7", "D5");
+   assert(b.move("E5", "E6") == false);
+   assert(b.move("E5", "E7") == false);
+   assert(b.move("E5", "F6") == false);
+   assert(b.move("E5", "D6") == true);
+   // En passant ritardato di una mossa (non si può fare)
+   b = Board{"rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"};
+   assert(b.move("D1", "E2") == true);
+   assert(b.move("F7", "F6") == true); // problema
+   assert(b.move("E5", "D6") == false);
+   assert(b.move("E5", "F6") == true);
+   // Sempre en passant ma dall'altra parte
+   b = Board{"rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"};
+   assert(b.move("D1", "E2") == true);
+   assert(b.move("F7", "F5") == true);
+   assert(b.move("E5", "D6") == false);
+   assert(b.move("E5", "F6") == true);
+   // En passant con pedone pinnato al re
+   b = Board{"rnb1kbnr/ppp1qppp/8/3pP3/8/7Q/PPPP1PPP/RNB1KBNR b KQkq - 6 8"};
+   b.move("F7", "F5");
+   assert(b.move("E5", "F6") == false); // Pedone pinnato dalla regina
+
+   cout << "\n--------------------------EN PASSANT TEST SUCCESSFUL--------------------------";
+}
+void promotion_test() {
+
+   cout << "\n--------------------------PROMOTION TEST SUCCESSFUL--------------------------";
 }

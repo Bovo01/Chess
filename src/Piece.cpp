@@ -59,27 +59,32 @@ namespace Chess
       Direction king_dir = my_king->position() - _position;
       if (!king_dir.is_bishop_direction() && !king_dir.is_rook_direction())
          return true; // Il percorso tra questo pezzo e il re non può essere percorso nè da un alfiere nè da una torre => nessuno può pinnare il pezzo corrente => il pezzo si muove liberamente
-      if (king_dir.is_same_line(dir)) // TODO Fix per il cavallo
+      if (king_dir.is_same_line(dir))
          return true; // La destinazione 'dir' ha stessa direzione rispetto al re => il pezzo si muove liberamente in questa direzione
       // Ottengo tutti i pezzi che potrebbero attaccare questo pezzo al re
-      std::vector<PieceType> possible_pinning_types = {QUEEN, BISHOP, ROOK};
+      std::vector<PieceType> possible_pinning_types{QUEEN, BISHOP, ROOK};
       std::vector<Piece *> possible_pinning_pieces;
       board.get_pieces(!_side, possible_pinning_types, possible_pinning_pieces);
       for (Piece *p : possible_pinning_pieces)
       {
          // Controllo se il pezzo 'p' mi attacca al re
          Direction p_dir = my_king->position() - p->position();
-         if (!dir.is_same_line(p_dir))
-            continue;
-         // Se arrivo qua, il pezzo 'p' è allineato a 'this' e al re
+         if (dir.is_same_line(p_dir))
+            continue; // Se dir e p_dir sono nella stessa retta, mi sto muovendo nella stessa direzione del pin
+         if (!king_dir.is_same_line(p_dir))
+            continue; // Se questo pezzo e 'p' non sono allineati al re (dalla stessa direzione) non può pinnarmi
+         // Se arrivo qua, il pezzo 'p' è allineato a 'this' e al re e non mi sto muovendo nella direzione del pin (basta controllare che non ci siano altri pezzi in mezzo)
          bool am_i_pinned = true;
          p_dir = p_dir.reduce();
          Position curr = p->position() + p_dir;
          while (curr != my_king->position())
          {
             Piece *found = board.find_piece(curr);
-            if (found && *found != *this)
+            if (found && found != this) {
                am_i_pinned = false;
+               break;
+            }
+            curr += p_dir;
          }
          // Se sono pinnato non posso muovermi
          if (am_i_pinned)

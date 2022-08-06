@@ -78,8 +78,8 @@ namespace Chess
          _positions.push_back(pieces);
       }
       initialize_matrix(); // Copia automaticamente _pieces qua dentro
-      _white_king = other._white_king;
-      _black_king = other._black_king;
+      _white_king = (King *) other._white_king->clone();
+      _black_king = (King *) other._black_king->clone();
    }
    /*       DISTRUTORI           */
 
@@ -136,8 +136,8 @@ namespace Chess
          _positions.push_back(pieces);
       }
       initialize_matrix(); // Copia automaticamente _pieces qua dentro
-      _white_king = other._white_king;
-      _black_king = other._black_king;
+      _white_king = (King *) other._white_king->clone();
+      _black_king = (King *) other._black_king->clone();
       return *this;
    }
 
