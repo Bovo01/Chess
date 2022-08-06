@@ -47,8 +47,9 @@ namespace Chess
       // ultima colonna pedone (solo per en passant)
       short _last_pawn_move{-1};
       // regola delle 50 mosse
-      short _50_move_count{0};
-      Side _50_move_start;
+      short _semimosse_50_move_rule{0};
+      // Contatore delle mosse
+      short _mossa{1};
       // Elenco di tutte le posizione avvenute nella scacchiera (per controllare la ripetizione di mosse)
       std::vector<std::vector<Piece *>> _positions;
 
@@ -96,6 +97,8 @@ namespace Chess
       Board(const Board &other);
       // Distruttore che libera la memoria dai puntatori
       ~Board();
+
+      Board operator=(const Board &&other);
 
       // Eccezione per indicare una mossa invalida o illegale
       class IllegalMoveException

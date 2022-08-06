@@ -49,7 +49,37 @@ namespace Chess
 
    Board::Board(const Board &other)
    {
-      // TODO Costruttore di copia, copia profonda di _positions, _pieces, _pieces_grid
+      for (Piece *p : _pieces)
+         if (p)
+            delete p;
+      _pieces.clear();
+      _pieces.reserve(other._pieces.size());
+      for (const Piece *p : other._pieces) {
+         _pieces.push_back(p->clone());
+      }
+      _turn = other._turn;
+      _castling_permissions = other._castling_permissions;
+      _last_pawn_move = other._last_pawn_move;
+      _semimosse_50_move_rule = other._semimosse_50_move_rule;
+      _mossa = other._mossa;
+      for (std::vector<Piece *> positions : _positions) {
+         for (Piece *p : positions)
+            if (p)
+               delete p;
+      }
+      _positions.clear();
+      _positions.reserve(other._positions.size());
+      for (const std::vector<Piece *> positions : other._positions) {
+         std::vector<Piece *> pieces;
+         pieces.reserve(positions.size());
+         for (const Piece *piece : positions) {
+            pieces.push_back(piece->clone());
+         }
+         _positions.push_back(pieces);
+      }
+      initialize_matrix(); // Copia automaticamente _pieces qua dentro
+      _white_king = other._white_king;
+      _black_king = other._black_king;
    }
    /*       DISTRUTORI           */
 
@@ -57,13 +87,16 @@ namespace Chess
    {
       // Elimino tutti i pezzi
       for (Piece *p : _pieces)
-         delete p;
+         if (p)
+            delete p;
       // Elimino la griglia
       for (int i = 0; i < 8; i++)
       {
-         delete[] _pieces_grid[i];
+         if (_pieces_grid[i])
+            delete[] _pieces_grid[i];
       }
       delete[] _pieces_grid;
+      _pieces_grid = NULL;
       // Elimino l'elenco delle posizioni
       for (std::vector<Piece *> position : _positions)
       {
@@ -72,6 +105,42 @@ namespace Chess
                delete p;
       }
    }
+   
+   Board Board::operator=(const Board &&other) {
+      for (Piece *p : _pieces)
+         if (p)
+            delete p;
+      _pieces.clear();
+      _pieces.reserve(other._pieces.size());
+      for (const Piece *p : other._pieces) {
+         _pieces.push_back(p->clone());
+      }
+      _turn = other._turn;
+      _castling_permissions = other._castling_permissions;
+      _last_pawn_move = other._last_pawn_move;
+      _semimosse_50_move_rule = other._semimosse_50_move_rule;
+      _mossa = other._mossa;
+      for (std::vector<Piece *> positions : _positions) {
+         for (Piece *p : positions)
+            if (p)
+               delete p;
+      }
+      _positions.clear();
+      _positions.reserve(other._positions.size());
+      for (const std::vector<Piece *> positions : other._positions) {
+         std::vector<Piece *> pieces;
+         pieces.reserve(positions.size());
+         for (const Piece *piece : positions) {
+            pieces.push_back(piece->clone());
+         }
+         _positions.push_back(pieces);
+      }
+      initialize_matrix(); // Copia automaticamente _pieces qua dentro
+      _white_king = other._white_king;
+      _black_king = other._black_king;
+      return *this;
+   }
+
    /*       METODI PRIVATI       */
 
    void Board::initialize(void)
@@ -103,7 +172,12 @@ namespace Chess
       _pieces.push_back(new Knight{"G8", BLACK});
       _pieces.push_back(new Rook{"H8", BLACK});
 
-      _positions.push_back(_pieces);
+      std::vector<Piece *> pieces;
+      pieces.reserve(_pieces.size());
+      for (const Piece *p : _pieces) {
+         pieces.push_back(p->clone());
+      }
+      _positions.push_back(pieces);
    }
 
    void Board::initialize_matrix(void)
@@ -183,10 +257,20 @@ namespace Chess
       index += len + 1;
       if (FEN[index] == '-') {
          _last_pawn_move = -1;
+         index += 2;
       } else {
          Position behind_pos{FEN.substr(index, 2)};
+         if (!behind_pos.is_valid())
+            throw "Invalid FEN format";
          _last_pawn_move = behind_pos.x;
+         index += 3;
       }
+      // Gestione semimosse (regola delle 50 mosse)
+      len = FEN.substr(index).find(' ');
+      _semimosse_50_move_rule = stoi(FEN.substr(index, len));
+      // Gestione mossa attuale
+      index += len + 1;
+      _mossa = stoi(FEN.substr(index));
    }
 
 
@@ -588,6 +672,8 @@ namespace Chess
    bool Board::move(const Position from, const Position to, const PieceType promotion_type)
    {
       Piece *p = find_piece(from);
+      if (p->side() != _turn)
+         return false;
       bool eaten = find_piece(to) != nullptr;
       if (p->move(to, *this, promotion_type))
       {
@@ -618,14 +704,12 @@ namespace Chess
       if (eaten || p->type() == PAWN)
       {
          // Reset della regola delle 50 mosse
-         _50_move_count = 1;
-         _50_move_start = p->side();
+         _semimosse_50_move_rule = 0;
       }
       else
       {
          // Incremento periodo 50 mosse
-         if (_50_move_start == p->side())
-            _50_move_count++;
+         _semimosse_50_move_rule++;
       }
    }
 
@@ -699,7 +783,7 @@ namespace Chess
 
    // Ending Board::is_game_over(void) const
    // {
-   //    if (_50_move_count >= 50)
+   //    if (_semimosse_50_move_rule >= 100)
    //       return _50_MOVE_RULE;
    //    if (is_insufficient_material())
    //       return INSUFFICIENT_MATERIAL;
