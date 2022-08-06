@@ -114,10 +114,31 @@ void en_passant_test() {
    b = Board{"rnb1kbnr/ppp1qppp/8/3pP3/8/7Q/PPPP1PPP/RNB1KBNR b KQkq - 6 8"};
    b.move("F7", "F5");
    assert(b.move("E5", "F6") == false); // Pedone pinnato dalla regina
+   // En passant con pin 'fasullo' (nel senso che provo a rompere il codice, sperando che sia solido)
+   b = Board{"rnb1kbnr/ppp3pp/8/3pPp2/1q3P2/7Q/PPPP2PP/RNB1KBNR w KQkq f6 0 10"};
+   assert(b.move("E5", "F6") == true);
 
    cout << "\n--------------------------EN PASSANT TEST SUCCESSFUL--------------------------";
 }
 void promotion_test() {
+   // Problema della promozione : se non inserisco il pezzo a cui promuovere me lo chiede in input finché non lo inserisco
+
+   // Promozione a donna
+   Board b{"rnbqkbnr/pppp1ppp/8/8/4P3/5N2/PPPP3p/RNBQKBR1 b Qkq - 1 5"};
+   b.move("H2", "H1", QUEEN);
+   assert(b.find_piece("H1")->type() == PieceType::QUEEN);
+   // Promozione a torre
+   b = Board{"rnbqkbnr/pppp1ppp/8/8/4P3/5N2/PPPP3p/RNBQKBR1 b Qkq - 1 5"};
+   b.move("H2", "H1", ROOK);
+   assert(b.find_piece("H1")->type() == PieceType::ROOK);
+   // Promozione a alfiere
+   b = Board{"rnbqkbnr/pppp1ppp/8/8/4P3/5N2/PPPP3p/RNBQKBR1 b Qkq - 1 5"};
+   b.move("H2", "G1", BISHOP);
+   assert(b.find_piece("G1")->type() == PieceType::BISHOP);
+   // Promozione a cavallo
+   b = Board{"rnbqkbnr/pppp1ppp/8/8/4P3/5N2/PPPP3p/RNBQKBR1 b Qkq - 1 5"};
+   b.move("H2", "G1", KNIGHT);
+   assert(b.find_piece("G1")->type() == PieceType::KNIGHT);
 
    cout << "\n--------------------------PROMOTION TEST SUCCESSFUL--------------------------";
 }

@@ -733,20 +733,18 @@ namespace Chess
 
    PieceType Board::request_promotion_type() const
    {
-      std::cout << "Inserisci il pezzo a cui vuoi promuovere: ";
+      std::cout << "Inserisci il pezzo a cui vuoi promuovere (N,B,R,Q): ";
       char in;
       std::cin >> in;
-      switch (std::tolower(in))
+      switch (std::toupper(in))
       {
-      case 'p':
-         return PAWN;
-      case 'c':
+      case 'N':
          return KNIGHT;
-      case 'a':
+      case 'B':
          return BISHOP;
-      case 't':
+      case 'R':
          return ROOK;
-      case 'd':
+      case 'Q':
          return QUEEN;
       default:
          return KING;
