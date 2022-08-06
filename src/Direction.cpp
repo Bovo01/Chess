@@ -37,6 +37,9 @@ namespace Chess
 
    bool Direction::operator==(const Direction &other) const { return x == other.x && y == other.y; }
    bool Direction::operator!=(const Direction &other) const { return !(*this == other); }
+   std::ostream &operator<<(std::ostream &os, const Direction &dir) {
+      return os << "(x=" << dir.x << ", y=" << dir.y << ")";
+   }
 }
 
 #endif

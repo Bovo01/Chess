@@ -1,6 +1,8 @@
 #ifndef DIRECTION_H
 #define DIRECTION_H
 
+#include <ostream>
+
 namespace Chess
 {
    struct Direction
@@ -27,6 +29,8 @@ namespace Chess
       bool operator==(const Direction &other) const;
       bool operator!=(const Direction &other) const;
    };
+
+   std::ostream &operator<<(std::ostream &os, const Direction &dir);
 }
 
 #endif
