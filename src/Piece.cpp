@@ -32,7 +32,7 @@ namespace Chess
       {
          remove_castling_permissions(board, to);
          board.kill_piece(to);
-         board.change_position(_position, to);
+         board.change_position(this, to);
          return true;
       }
       return false;

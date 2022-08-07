@@ -55,7 +55,7 @@ namespace Chess
       // Getter di _type
       virtual PieceType type(void) const = 0;
 
-      // Sposta il pezzo dalla posizione corrente a quella passata per parametro, senza eseguire controlli
+      // Sposta il pezzo dalla posizione corrente a quella passata per parametro, eseguendo tutti i controlli necessari
       virtual bool move(const Position &to, Board &board, const PieceType promotion_type);
 
       // Controlla se il pezzo attuale può muoversi alla posizione to

@@ -57,8 +57,8 @@ namespace Chess
       // Elenco dei pezzi sotto forma di matrice (in modo da poter accedere direttamente ad una posizione)
       Piece ***_pieces_grid;
       // Re
-      King *_white_king;
-      King *_black_king;
+      Piece *_white_king;
+      Piece *_black_king;
       // Scacco
       // TODO Gestisci variabile scacco
       short _is_check{0b00};
@@ -161,9 +161,9 @@ namespace Chess
       std::vector<Piece *> &whos_giving_check(const Side &side, std::vector<Piece *> &output) const;
       // Ritorna, nell'array output, tutti i pezzi che stanno dando scacco al re dello schieramento side
       std::vector<Piece *> &whos_giving_check(const Side &side, const std::vector<Piece *> &pieces, std::vector<Piece *> &output) const;
-      // Ritorna, nell'array output, tutte le posizioni che permettono di bloccare uno scacco
+      // Ritorna, nell'array output, tutte le posizioni che permettono di bloccare uno scacco o di mangiare chi sta dando lo scacco
       std::vector<Position> &cells_to_block_check(const Side &side, std::vector<Position> &output) const;
-      // Ritorna, nell'array output, tutte le posizioni che permettono di bloccare uno scacco
+      // Ritorna, nell'array output, tutte le posizioni che permettono di bloccare uno scacco o di mangiare chi sta dando lo scacco
       std::vector<Position> &cells_to_block_check(const Side &side, const std::vector<Piece *> &pieces, std::vector<Position> &output) const;
       // Ritorna, nell'array output, tutte le posizioni che permettono di bloccare uno scacco, avendo i pezzi che danno scacco
       std::vector<Position> &cells_to_block_check(const Side &side, const std::vector<Piece *> &pieces, const std::vector<Piece *> &pieces_that_give_check, std::vector<Position> &output) const;

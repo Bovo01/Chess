@@ -55,7 +55,16 @@ namespace Chess
       _pieces.clear();
       _pieces.reserve(other._pieces.size());
       for (const Piece *p : other._pieces) {
-         _pieces.push_back(p->clone());
+         if (p->type() == KING) {
+            if (p->side() == WHITE) {
+               _white_king = p->clone();
+               _pieces.push_back(_white_king);
+            } else {
+               _black_king = p->clone();
+               _pieces.push_back(_black_king);
+            }
+         } else
+            _pieces.push_back(p->clone());
       }
       _turn = other._turn;
       _castling_permissions = other._castling_permissions;
@@ -78,8 +87,6 @@ namespace Chess
          _positions.push_back(pieces);
       }
       initialize_matrix(); // Copia automaticamente _pieces qua dentro
-      _white_king = (King *) other._white_king->clone();
-      _black_king = (King *) other._black_king->clone();
    }
    /*       DISTRUTORI           */
 
@@ -113,7 +120,16 @@ namespace Chess
       _pieces.clear();
       _pieces.reserve(other._pieces.size());
       for (const Piece *p : other._pieces) {
-         _pieces.push_back(p->clone());
+         if (p->type() == KING) {
+            if (p->side() == WHITE) {
+               _white_king = p->clone();
+               _pieces.push_back(_white_king);
+            } else {
+               _black_king = p->clone();
+               _pieces.push_back(_black_king);
+            }
+         } else
+            _pieces.push_back(p->clone());
       }
       _turn = other._turn;
       _castling_permissions = other._castling_permissions;
@@ -136,8 +152,6 @@ namespace Chess
          _positions.push_back(pieces);
       }
       initialize_matrix(); // Copia automaticamente _pieces qua dentro
-      _white_king = (King *) other._white_king->clone();
-      _black_king = (King *) other._black_king->clone();
       return *this;
    }
 
@@ -211,9 +225,9 @@ namespace Chess
          } else if (isalpha(c)) {
             create_new_piece(static_cast<PieceType>(toupper(c)), {x, y}, isupper(c) ? WHITE : BLACK);
             if (c == 'k') {
-               _black_king = (King *) find_piece({x, y});
+               _black_king = find_piece({x, y});
             } else if (c == 'K') {
-               _white_king = (King *) find_piece({x, y});
+               _white_king = find_piece({x, y});
             }
             x++;
          } else {
@@ -359,6 +373,7 @@ namespace Chess
       if (pieces_that_give_check.size() != 1)
          return output; // Se ci sono più pezzi che fanno scacco o non è scacco => lo scacco non si può bloccare
       Piece *checking_piece = pieces_that_give_check[0];
+      output.push_back(checking_piece->position());
       switch (checking_piece->type())
       {
       case PAWN:
@@ -567,7 +582,6 @@ namespace Chess
       } else if (giving_check.size() == 1) { // è scacco
          std::vector<Position> cells_to_block;
          cells_to_block_check(giving_check, side, cells_to_block);
-         cells_to_block.push_back(giving_check[0]->position()); // Aggiungo come posizione bloccante la posizione del nemico, in modo da poterlo mangiare
          for (const Piece *p : _pieces) {
             if (p->side() != side || p->type() == KING)
                continue;
@@ -652,7 +666,7 @@ namespace Chess
 
    King *Board::get_king(const Side side) const
    {
-      return side == WHITE ? _white_king : _black_king;
+      return (King *)(side == WHITE ? _white_king : _black_king);
    }
 
    void Board::change_position(const Position &from, const Position &to)
@@ -663,10 +677,9 @@ namespace Chess
 
    void Board::change_position(Piece *p, const Position &to)
    {
-      Position &p_pos = p->position();
-      _pieces_grid[p_pos.y][p_pos.x] = nullptr;
-      _pieces_grid[to.y][to.x] = p;
-      p_pos = to;
+      _pieces_grid[p->position().y][p->position().x] = nullptr;
+      p->position() = to;
+      _pieces_grid[p->position().y][p->position().x] = p;
    }
 
    bool Board::move(const Position from, const Position to, const PieceType promotion_type)

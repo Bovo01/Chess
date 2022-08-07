@@ -22,10 +22,11 @@ int main() {
    // Board b{"rnbqkbnr/ppp1ppp1/7p/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"};
 
    /* TEST */
-   // turn_test();
-   // castling_test();
-   // pawn_test();
+   turn_test();
+   castling_test();
+   pawn_test();
    pin_test();
+   check_test();
 
 
    return 0;
@@ -105,7 +106,7 @@ void en_passant_test() {
    // En passant ritardato di una mossa (non si può fare)
    b = Board{"rnbqkbnr/ppp2ppp/4p3/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"};
    assert(b.move("D1", "E2") == true);
-   assert(b.move("F7", "F6") == true); // problema
+   assert(b.move("F7", "F6") == true);
    assert(b.move("E5", "D6") == false);
    assert(b.move("E5", "F6") == true);
    // Sempre en passant ma dall'altra parte
@@ -211,4 +212,33 @@ void pin_test() {
 void check_test() {
    // Blocco e mangio la regina che scacca
    Board b{"rnb1kb1r/ppp2ppp/3p1n2/8/8/3PqN2/PPP2PPP/RNB1KB1R w KQkq - 0 8"};
+   assert(b.move("H1", "G1") == false);
+   assert(b.move("B1", "C3") == false);
+   assert(b.move("B1", "D2") == false);
+   assert(b.move("C1", "D2") == false);
+   assert(b.move("C1", "E3") == true);
+   b = Board{"rnb1kb1r/ppp2ppp/3p1n2/8/8/3PqN2/PPP2PPP/RNB1KB1R w KQkq - 0 8"};
+   assert(b.move("F2", "E3") == true);
+   b = Board{"rnb1kb1r/ppp2ppp/3p1n2/8/8/3PqN2/PPP2PPP/RNB1KB1R w KQkq - 0 8"};
+   assert(b.move("F1", "E2") == true);
+   // Nessuna mossa è buona (è matto)
+   b = Board{"r1bqkbnr/pppp1Qpp/8/4p3/2BnP3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4"};
+   assert(b.move("E8", "F7") == false);
+   assert(b.move("E8", "E7") == false);
+   assert(b.move("E8", "D7") == false);
+   assert(b.move("E8", "D8") == false);
+   assert(b.move("E8", "C8") == false);
+   // Pedone pinnato che non può mangiare il cavallo che fa scacco
+   b = Board{"rn3r2/pp2kppp/2b1p3/Q2P4/4R3/8/PP2BPPP/RNB1K1NR b - - 0 1"};
+   assert(b.move("E6", "D5") == false);
+   assert(b.move("E7", "D8") == false);
+   assert(b.move("C6", "D5") == true);
+   assert(b.move("A5", "C7") == true);
+   assert(b.move("D5", "E4") == false);
+   assert(b.move("E7", "E8") == true);
+   assert(b.move("E2", "H5") == true);
+   assert(b.move("D5", "C6") == true);
+   assert(b.move("E4", "E6") == true); // Matto bellissimo
+
+   cout << "\n--------------------------CHECK TEST SUCCESSFUL--------------------------\n";
 }
