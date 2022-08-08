@@ -497,6 +497,7 @@ namespace Chess
 
    /* CONTROLLO FINALI */
 
+   // TODO Controlla finale
    bool Board::is_insufficient_material() const
    {
       short white_bishop_color = -1,
@@ -567,7 +568,7 @@ namespace Chess
       }
       return true;
    }
-   // TODO Fixa codice finali
+
    Ending Board::is_checkmate_stalemate(const Side &side) const
    {
       // Controllo se il re ha mosse legali
@@ -600,39 +601,40 @@ namespace Chess
       }
    }
 
-   // bool Board::is_repetition(void) const
-   // {
-   //    for (int i = 0; i < _positions.size(); i++)
-   //    {
-   //       short repetitions = 1;
-   //       const std::vector<Piece> &curr_pos = _positions[i];
-   //       for (int j = i + 1; j < _positions.size(); j++)
-   //       {
-   //          const std::vector<Piece> &next_pos = _positions[j];
-   //          if (curr_pos.size() != next_pos.size())
-   //          {
-   //             continue;
-   //          }
-   //          bool found = true;
-   //          for (const Piece &p : curr_pos)
-   //          {
-   //             if (std::find_if(next_pos.begin(), next_pos.end(), [&p](const Piece &other)
-   //                              { return p == other; }) == next_pos.end())
-   //             {
-   //                found = false;
-   //                break;
-   //             }
-   //          }
-   //          if (found)
-   //          {
-   //             repetitions++;
-   //          }
-   //       }
-   //       if (repetitions >= 3)
-   //          return true;
-   //    }
-   //    return false;
-   // }
+   // TODO Controlla finale
+   bool Board::is_repetition(void) const
+   {
+      for (int i = 0; i < _positions.size(); i++)
+      {
+         short repetitions = 1;
+         const std::vector<Piece *> &curr_pos = _positions[i];
+         for (int j = i + 1; j < _positions.size(); j++)
+         {
+            const std::vector<Piece *> &next_pos = _positions[j];
+            if (curr_pos.size() != next_pos.size())
+            {
+               continue;
+            }
+            bool found = true;
+            for (const Piece *p : curr_pos)
+            {
+               if (std::find_if(next_pos.begin(), next_pos.end(), [p](const Piece *other)
+                                { return *p == *other; }) == next_pos.end())
+               {
+                  found = false;
+                  break;
+               }
+            }
+            if (found)
+            {
+               repetitions++;
+            }
+         }
+         if (repetitions >= 3)
+            return true;
+      }
+      return false;
+   }
 
    /*       OVERLOAD OPERATORI       */
 
@@ -792,16 +794,16 @@ namespace Chess
       _pieces_grid[pos.y][pos.x] = p;
    }
 
-   // Ending Board::is_game_over(void) const
-   // {
-   //    if (_semimosse_50_move_rule >= 100)
-   //       return _50_MOVE_RULE;
-   //    if (is_insufficient_material())
-   //       return INSUFFICIENT_MATERIAL;
-   //    if (is_repetition())
-   //       return REPETITION;
-   //    return is_checkmate_stalemate(_turn);
-   // }
+   Ending Board::is_game_over(void) const
+   {
+      if (_semimosse_50_move_rule >= 100)
+         return _50_MOVE_RULE;
+      if (is_insufficient_material())
+         return INSUFFICIENT_MATERIAL;
+      if (is_repetition())
+         return REPETITION;
+      return is_checkmate_stalemate(_turn);
+   }
 }
 
 #endif

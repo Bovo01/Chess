@@ -111,6 +111,9 @@ namespace Chess
                continue; // Ignoro la posizione del re
             const Position to = _position.move(i, j);
             if (to.is_valid()) {
+               Piece *p = board.find_piece(to);
+               if (p && p->side() == _side)
+                  continue; // La posizione di arrivo è occupata da un pezzo alleato
                bool controlled = false;
                for (const Piece *enemy_piece : enemy_pieces) {
                   if (enemy_piece->is_controlling(board, to)) {

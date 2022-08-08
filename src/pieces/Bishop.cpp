@@ -45,7 +45,7 @@ namespace Chess
          return false;
       Direction dir = diff.reduce();
       // Controllo se qualcuno ostruisce il passaggio
-      if (is_obstructed(board, to, dir))
+      if (is_obstructed_controlling(board, to, dir))
          return false;
       return true;
    }

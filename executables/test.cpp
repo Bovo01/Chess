@@ -14,6 +14,9 @@ void promotion_test();
 void pin_test();
 void check_test();
 
+void checkmate_test();
+void stalemate_test();
+
 int main() {
    // Board b{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
    // Board b{"rnb1k2r/ppp1qpb1/3p1np1/4p2p/4P3/3B1N1P/PPPP1PP1/RNBQ1RK1 b - - 3 12"};
@@ -21,12 +24,16 @@ int main() {
    // Board b{"rnb1kb2/ppppqppr/5n2/4p2p/4P3/3B1N1P/PPPP1PP1/RNBQ1RK1 b q - 2 6"};
    // Board b{"rnbqkbnr/ppp1ppp1/7p/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"};
 
-   /* TEST */
+   /* MOVEMENT TEST */
    turn_test();
    castling_test();
    pawn_test();
    pin_test();
    check_test();
+
+   /* ENDING TEST */
+   checkmate_test();
+   stalemate_test();
 
 
    return 0;
@@ -241,4 +248,80 @@ void check_test() {
    assert(b.move("E4", "E6") == true); // Matto bellissimo
 
    cout << "\n--------------------------CHECK TEST SUCCESSFUL--------------------------\n";
+}
+
+void checkmate_test() {
+   // Matto
+   Board b{"r1bqkbnr/pppp1Qpp/8/4p3/2BnP3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4"};
+   assert(b.is_game_over() == Ending::WHITE_CHECKMATE);
+   // Testo un bel matto
+   b = Board{"rn3r2/pp2kppp/2b1p3/Q2P4/4R3/8/PP2BPPP/RNB1K1NR b - - 0 1"};
+   b.move("E6", "D5");
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("E7", "D8");
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("C6", "D5");
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("A5", "C7");
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("D5", "E4");
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("E7", "E8");
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("E2", "H5");
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("D5", "C6");
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("E4", "E6"); // Matto bellissimo
+   assert(b.is_game_over() == Ending::WHITE_CHECKMATE);
+   // Matto
+   b = Board{"r4nkr/R7/2bbN3/8/2q5/8/PPB2R2/K7 w - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("A7", "G7");
+   assert(b.is_game_over() == Ending::WHITE_CHECKMATE);
+   // Matto
+   b = Board{"8/pp1k4/7b/8/8/8/PP4Q1/1NRKR3 w - - 1 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("G2", "D5");
+   assert(b.is_game_over() == Ending::WHITE_CHECKMATE);
+   // Matto del nero
+   b = Board{"r1b1kb1r/pppp1pp1/2n5/1B2p3/4P2q/5Pp1/PPPPQ1P1/RNB1NRK1 b kq - 2 10"};
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("H4", "H1");
+   assert(b.is_game_over() == Ending::BLACK_CHECKMATE);
+   // Matto del nero
+   b = Board{"8/8/8/8/8/2k5/7q/K7 b - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("H2", "B2");
+   assert(b.is_game_over() == Ending::BLACK_CHECKMATE);
+
+   cout << "\n--------------------------CHECKMATE TEST SUCCESSFUL--------------------------\n";
+}
+
+void stalemate_test() {
+   // Stallo con tutti i pezzi ancora in vita
+   Board b{"rn2k1nr/pp4pp/3p4/q1pP4/P1P2p1b/1b2pPRP/1P1NP1PQ/2B1KBNR w Kkq - 0 13"};
+   assert(b.is_game_over() == Ending::STALEMATE);
+   // Stallo più corto possibile
+   b = Board{"5bnr/4p1pq/4Qpkr/7p/7P/4P3/PPPP1PP1/RNB1KBNR b KQ - 2 10"};
+   assert(b.is_game_over() == Ending::STALEMATE);
+   // Stallo con la regina
+   b = Board{"8/8/8/8/8/2k5/7q/K7 b - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("H2", "C2");
+   assert(b.is_game_over() == Ending::STALEMATE);
+   // Stallo di re
+   b = Board{"8/6pp/8/7K/5k1P/8/8/8 b - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("F4", "F5");
+   assert(b.is_game_over() == Ending::STALEMATE);
+   // Stallo forzato dal bianco
+   b = Board{"8/1k2b3/6p1/6p1/6K1/2R5/8/1q6 w - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("C3", "B3");
+   assert(b.is_game_over() == Ending::NONE);
+   b.move("B1", "B3");
+   assert(b.is_game_over() == Ending::STALEMATE);
+
+   cout << "\n--------------------------STALEMATE TEST SUCCESSFUL--------------------------\n";
 }

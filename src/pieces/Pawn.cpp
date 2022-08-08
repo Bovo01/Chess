@@ -117,15 +117,9 @@ namespace Chess
 
    bool Pawn::has_legal_moves_ignore_checks(const Board &board) const
    {
-      // Push di 1
+      // Push di 1 (non serve controllare il push di 2 perché se è possibile spostare il pedone di una casa è possibile farlo anche di 2)
       Position to = _position.move(0, _pawn_direction);
       {
-         if (Piece::can_move(to, board) && can_reach(board, to) && can_move_through_pin(board, to - _position))
-            return true;
-      }
-      // Push di 2
-      to = _position.move(0, 2 * _pawn_direction);
-      if (to.is_valid()) {
          if (Piece::can_move(to, board) && can_reach(board, to) && can_move_through_pin(board, to - _position))
             return true;
       }

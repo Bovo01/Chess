@@ -122,8 +122,22 @@ namespace Chess
       Position curr = _position + dir;
       while (curr != to)
       {
-         // Se la vista verso 'to' è ostruita ritorno false
+         // Se la vista verso 'to' è ostruita ritorno true
          if (board.find_piece(curr) != nullptr)
+            return true;
+         curr += dir;
+      }
+      return false;
+   }
+
+   bool Piece::is_obstructed_controlling(const Board &board, const Position &to, const Direction dir) const
+   {
+      Position curr = _position + dir;
+      while (curr != to)
+      {
+         Piece *p = board.find_piece(curr);
+         // Se la vista verso 'to' è ostruita ritorno true
+         if (p != nullptr && (p->type() != KING || p->side() == _side))
             return true;
          curr += dir;
       }

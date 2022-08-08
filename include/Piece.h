@@ -42,6 +42,9 @@ namespace Chess
       bool can_move_through_check(const Board &board, const Position to) const;
       // Controlla se c'è qualcuno che ostruisce il percorso dalla posizione attuale alla posizione 'to' seguendo la direzione 'dir'
       bool is_obstructed(const Board &board, const Position to, const Direction dir) const;
+      // Controlla se il passaggio verso 'to' è ostruito
+      // Caso speciale per quando c'è il re avversario, in cui è sotto scacco è sto controllando le caso dietro di lui
+      bool is_obstructed_controlling(const Board &board, const Position &to, const Direction dir) const;
 
    public:
       Piece(const Position position, const Side side);
