@@ -61,6 +61,8 @@ namespace Chess
    bool Rook::is_controlling(const Board &board, const Position &to) const
    {
       Direction diff = to - _position;
+      if (diff == Direction{0, 0})
+         return false;
       // Controllo se ci posso arrivare
       if (!diff.is_rook_direction())
          return false;

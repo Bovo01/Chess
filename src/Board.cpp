@@ -46,7 +46,6 @@ namespace Chess
       initialize_FEN(FEN);
    }
 
-
    Board::Board(const Board &other)
    {
       for (Piece *p : _pieces)
@@ -54,16 +53,22 @@ namespace Chess
             delete p;
       _pieces.clear();
       _pieces.reserve(other._pieces.size());
-      for (const Piece *p : other._pieces) {
-         if (p->type() == KING) {
-            if (p->side() == WHITE) {
+      for (const Piece *p : other._pieces)
+      {
+         if (p->type() == KING)
+         {
+            if (p->side() == WHITE)
+            {
                _white_king = p->clone();
                _pieces.push_back(_white_king);
-            } else {
+            }
+            else
+            {
                _black_king = p->clone();
                _pieces.push_back(_black_king);
             }
-         } else
+         }
+         else
             _pieces.push_back(p->clone());
       }
       _turn = other._turn;
@@ -71,17 +76,21 @@ namespace Chess
       _last_pawn_move = other._last_pawn_move;
       _semimosse_50_move_rule = other._semimosse_50_move_rule;
       _mossa = other._mossa;
-      for (std::vector<Piece *> positions : _positions) {
+      for (std::vector<Piece *> positions : _positions)
+      {
          for (Piece *p : positions)
             if (p)
                delete p;
       }
       _positions.clear();
       _positions.reserve(other._positions.size());
-      for (const std::vector<Piece *> positions : other._positions) {
+      for (int i = 0; i < _positions.size(); i++)
+      {
+         const std::vector<Piece *> positions = other._positions[i];
          std::vector<Piece *> pieces;
          pieces.reserve(positions.size());
-         for (const Piece *piece : positions) {
+         for (const Piece *piece : positions)
+         {
             pieces.push_back(piece->clone());
          }
          _positions.push_back(pieces);
@@ -112,23 +121,30 @@ namespace Chess
                delete p;
       }
    }
-   
-   Board Board::operator=(const Board &&other) {
+
+   Board Board::operator=(const Board &&other)
+   {
       for (Piece *p : _pieces)
          if (p)
             delete p;
       _pieces.clear();
       _pieces.reserve(other._pieces.size());
-      for (const Piece *p : other._pieces) {
-         if (p->type() == KING) {
-            if (p->side() == WHITE) {
+      for (const Piece *p : other._pieces)
+      {
+         if (p->type() == KING)
+         {
+            if (p->side() == WHITE)
+            {
                _white_king = p->clone();
                _pieces.push_back(_white_king);
-            } else {
+            }
+            else
+            {
                _black_king = p->clone();
                _pieces.push_back(_black_king);
             }
-         } else
+         }
+         else
             _pieces.push_back(p->clone());
       }
       _turn = other._turn;
@@ -136,17 +152,21 @@ namespace Chess
       _last_pawn_move = other._last_pawn_move;
       _semimosse_50_move_rule = other._semimosse_50_move_rule;
       _mossa = other._mossa;
-      for (std::vector<Piece *> positions : _positions) {
+      for (std::vector<Piece *> positions : _positions)
+      {
          for (Piece *p : positions)
             if (p)
                delete p;
       }
       _positions.clear();
       _positions.reserve(other._positions.size());
-      for (const std::vector<Piece *> positions : other._positions) {
+      for (int i = 0; i < _positions.size(); i++)
+      {
+         const std::vector<Piece *> positions = other._positions[i];
          std::vector<Piece *> pieces;
          pieces.reserve(positions.size());
-         for (const Piece *piece : positions) {
+         for (const Piece *piece : positions)
+         {
             pieces.push_back(piece->clone());
          }
          _positions.push_back(pieces);
@@ -186,10 +206,10 @@ namespace Chess
       _pieces.push_back(new Knight{"G8", BLACK});
       _pieces.push_back(new Rook{"H8", BLACK});
 
-      std::vector<Piece *> pieces;
-      pieces.reserve(_pieces.size());
-      for (const Piece *p : _pieces) {
-         pieces.push_back(p->clone());
+      std::vector<Piece *> pieces(_pieces.size());
+      for (int i = 0; i < pieces.size(); i++)
+      {
+         pieces[i] = _pieces[i]->clone();
       }
       _positions.push_back(pieces);
    }
@@ -214,65 +234,88 @@ namespace Chess
    {
       // Imposto la posizione di tutti i pezzi
       short x = 0, y = 7;
-      for (char c : FEN) {
-         if (c == ' ') {
+      for (char c : FEN)
+      {
+         if (c == ' ')
+         {
             break;
-         } else if (c == '/') {
+         }
+         else if (c == '/')
+         {
             y--;
             x = 0;
-         } else if (isdigit(c)) {
+         }
+         else if (isdigit(c))
+         {
             x += c - '0';
-         } else if (isalpha(c)) {
+         }
+         else if (isalpha(c))
+         {
             create_new_piece(static_cast<PieceType>(toupper(c)), {x, y}, isupper(c) ? WHITE : BLACK);
-            if (c == 'k') {
+            if (c == 'k')
+            {
                _black_king = find_piece({x, y});
-            } else if (c == 'K') {
+            }
+            else if (c == 'K')
+            {
                _white_king = find_piece({x, y});
             }
             x++;
-         } else {
+         }
+         else
+         {
             throw "Invalid FEN format";
          }
       }
       // Gestione turno
       int index = FEN.find(' ') + 1;
-      if (FEN[index] == 'w') {
+      if (FEN[index] == 'w')
+      {
          _turn = WHITE;
-      } else if (FEN[index] == 'b') {
+      }
+      else if (FEN[index] == 'b')
+      {
          _turn = BLACK;
-      } else {
+      }
+      else
+      {
          throw "Invalid FEN format";
       }
       // Gestione arrocco
       index += 2;
       int len = FEN.substr(index).find(' ');
       short castling = 0b0000;
-      for (int i = index; i < index + len; i++) {
-         switch (FEN[i]) {
-            case 'K':
-               castling |= 0b0100;
-               break;
-            case 'Q':
-               castling |= 0b1000;
-               break;
-            case 'k':
-               castling |= 0b0001;
-               break;
-            case 'q':
-               castling |= 0b0010;
-               break;
-            case '-':
-               break;
-            default:
-               throw "Invalid FEN format";
+      for (int i = index; i < index + len; i++)
+      {
+         switch (FEN[i])
+         {
+         case 'K':
+            castling |= 0b0100;
+            break;
+         case 'Q':
+            castling |= 0b1000;
+            break;
+         case 'k':
+            castling |= 0b0001;
+            break;
+         case 'q':
+            castling |= 0b0010;
+            break;
+         case '-':
+            break;
+         default:
+            throw "Invalid FEN format";
          }
       }
       // Gestione en passant
       index += len + 1;
-      if (FEN[index] == '-') {
+      if (FEN[index] == '-')
+      {
          _last_pawn_move = -1;
          index += 2;
-      } else {
+      }
+      else
+      {
          Position behind_pos{FEN.substr(index, 2)};
          if (!behind_pos.is_valid())
             throw "Invalid FEN format";
@@ -286,7 +329,6 @@ namespace Chess
       index += len + 1;
       _mossa = stoi(FEN.substr(index));
    }
-
 
    void Board::toggle_turn(void)
    {
@@ -575,23 +617,30 @@ namespace Chess
       King *king = get_king(side);
       if (king->has_legal_moves_ignore_checks(*this))
          return Ending::NONE;
-      
+
       std::vector<Piece *> giving_check;
       whos_giving_check(side, giving_check);
-      if (giving_check.size() > 1) { // è scacco doppio, e il re non ha mosse legali (è matto)
+      if (giving_check.size() > 1)
+      { // è scacco doppio, e il re non ha mosse legali (è matto)
          return side == WHITE ? BLACK_CHECKMATE : WHITE_CHECKMATE;
-      } else if (giving_check.size() == 1) { // è scacco
+      }
+      else if (giving_check.size() == 1)
+      { // è scacco
          std::vector<Position> cells_to_block;
          cells_to_block_check(giving_check, side, cells_to_block);
-         for (const Piece *p : _pieces) {
+         for (const Piece *p : _pieces)
+         {
             if (p->side() != side || p->type() == KING)
                continue;
             if (p->can_block_check(*this, cells_to_block))
                return Ending::NONE;
          }
          return side == WHITE ? BLACK_CHECKMATE : WHITE_CHECKMATE;
-      } else { // NON è scacco, potrebbe essere stallo
-         for (const Piece *p : _pieces) {
+      }
+      else
+      { // NON è scacco, potrebbe essere stallo
+         for (const Piece *p : _pieces)
+         {
             if (p->side() != side || p->type() == KING)
                continue;
             if (p->has_legal_moves_ignore_checks(*this))
@@ -612,9 +661,7 @@ namespace Chess
          {
             const std::vector<Piece *> &next_pos = _positions[j];
             if (curr_pos.size() != next_pos.size())
-            {
                continue;
-            }
             bool found = true;
             for (const Piece *p : curr_pos)
             {
@@ -626,9 +673,7 @@ namespace Chess
                }
             }
             if (found)
-            {
                repetitions++;
-            }
          }
          if (repetitions >= 3)
             return true;
@@ -698,6 +743,8 @@ namespace Chess
          update_50_move_rule(p, eaten);
          // Promuovo se necessario
          promote(p, promotion_type);
+         // Aggiungo la posizione attuale a _positions
+         add_position(_pieces);
          // Cambio turno
          toggle_turn();
 
@@ -792,6 +839,14 @@ namespace Chess
       }
       _pieces.push_back(p);
       _pieces_grid[pos.y][pos.x] = p;
+   }
+
+   void Board::add_position(std::vector<Piece *> pieces)
+   {
+      std::vector<Piece *> copy(pieces.size());
+      for (int i = 0; i < copy.size(); i++)
+         copy[i] = pieces[i]->clone();
+      _positions.push_back(copy);
    }
 
    Ending Board::is_game_over(void) const

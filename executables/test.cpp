@@ -16,14 +16,10 @@ void check_test();
 
 void checkmate_test();
 void stalemate_test();
+void repetition_test();
+void insufficient_test();
 
 int main() {
-   // Board b{"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"};
-   // Board b{"rnb1k2r/ppp1qpb1/3p1np1/4p2p/4P3/3B1N1P/PPPP1PP1/RNBQ1RK1 b - - 3 12"};
-   // Board b{"rnb1kb1r/ppppqppp/5n2/4p3/4P3/5N2/PPPPBPPP/RNBQ1RK1 b kq - 5 4"};
-   // Board b{"rnb1kb2/ppppqppr/5n2/4p2p/4P3/3B1N1P/PPPP1PP1/RNBQ1RK1 b q - 2 6"};
-   // Board b{"rnbqkbnr/ppp1ppp1/7p/3pP3/8/8/PPPP1PPP/RNBQKBNR w KQkq d6 0 3"};
-
    /* MOVEMENT TEST */
    turn_test();
    castling_test();
@@ -34,7 +30,8 @@ int main() {
    /* ENDING TEST */
    checkmate_test();
    stalemate_test();
-
+   repetition_test();
+   insufficient_test();
 
    return 0;
 }
@@ -105,7 +102,7 @@ void pawn_test() {
 void en_passant_test() {
    // Classico en passant
    Board b{"rnbqkbnr/pppp1ppp/4p3/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2"};
-   b.move("D7", "D5");
+   assert(b.move("D7", "D5") == true);
    assert(b.move("E5", "E6") == false);
    assert(b.move("E5", "E7") == false);
    assert(b.move("E5", "F6") == false);
@@ -124,7 +121,7 @@ void en_passant_test() {
    assert(b.move("E5", "F6") == true);
    // En passant con pedone pinnato al re
    b = Board{"rnb1kbnr/ppp1qppp/8/3pP3/8/7Q/PPPP1PPP/RNB1KBNR b KQkq - 6 8"};
-   b.move("F7", "F5");
+   assert(b.move("F7", "F5") == true);
    assert(b.move("E5", "F6") == false); // Pedone pinnato dalla regina
    // En passant con pin 'fasullo' (nel senso che provo a rompere il codice, sperando che sia solido)
    b = Board{"rnb1kbnr/ppp3pp/8/3pPp2/1q3P2/7Q/PPPP2PP/RNB1KBNR w KQkq f6 0 10"};
@@ -137,19 +134,19 @@ void promotion_test() {
 
    // Promozione a donna
    Board b{"rnbqkbnr/pppp1ppp/8/8/4P3/5N2/PPPP3p/RNBQKBR1 b Qkq - 1 5"};
-   b.move("H2", "H1", QUEEN);
+   assert(b.move("H2", "H1", QUEEN) == true);
    assert(b.find_piece("H1")->type() == PieceType::QUEEN);
    // Promozione a torre
    b = Board{"rnbqkbnr/pppp1ppp/8/8/4P3/5N2/PPPP3p/RNBQKBR1 b Qkq - 1 5"};
-   b.move("H2", "H1", ROOK);
+   assert(b.move("H2", "H1", ROOK) == true);
    assert(b.find_piece("H1")->type() == PieceType::ROOK);
    // Promozione a alfiere
    b = Board{"rnbqkbnr/pppp1ppp/8/8/4P3/5N2/PPPP3p/RNBQKBR1 b Qkq - 1 5"};
-   b.move("H2", "G1", BISHOP);
+   assert(b.move("H2", "G1", BISHOP) == true);
    assert(b.find_piece("G1")->type() == PieceType::BISHOP);
    // Promozione a cavallo
    b = Board{"rnbqkbnr/pppp1ppp/8/8/4P3/5N2/PPPP3p/RNBQKBR1 b Qkq - 1 5"};
-   b.move("H2", "G1", KNIGHT);
+   assert(b.move("H2", "G1", KNIGHT) == true);
    assert(b.find_piece("G1")->type() == PieceType::KNIGHT);
 
    cout << "\n--------------------------PROMOTION TEST SUCCESSFUL--------------------------";
@@ -161,8 +158,8 @@ void pin_test() {
    assert(b.move("F7", "F6") == false);
    assert(b.move("F7", "F5") == false);
    assert(b.move("F7", "G6") == false);
-   b.move("G7", "G6");
-   b.move("H5", "G6");
+   assert(b.move("G7", "G6") == true);
+   assert(b.move("H5", "G6") == true);
    assert(b.move("F7", "G6") == true);
    b = Board{"rnb1kbnr/pppp1ppp/8/8/5p1q/4P1P1/PPPP3P/RNBQKBNR w KQkq - 0 4"};
    assert(b.move("G3", "F4") == false);
@@ -250,49 +247,50 @@ void check_test() {
    cout << "\n--------------------------CHECK TEST SUCCESSFUL--------------------------\n";
 }
 
+
 void checkmate_test() {
    // Matto
    Board b{"r1bqkbnr/pppp1Qpp/8/4p3/2BnP3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4"};
    assert(b.is_game_over() == Ending::WHITE_CHECKMATE);
    // Testo un bel matto
    b = Board{"rn3r2/pp2kppp/2b1p3/Q2P4/4R3/8/PP2BPPP/RNB1K1NR b - - 0 1"};
-   b.move("E6", "D5");
+   assert(b.move("E6", "D5") == false);
    assert(b.is_game_over() == Ending::NONE);
-   b.move("E7", "D8");
+   assert(b.move("E7", "D8") == false);
    assert(b.is_game_over() == Ending::NONE);
-   b.move("C6", "D5");
+   assert(b.move("C6", "D5") == true);
    assert(b.is_game_over() == Ending::NONE);
-   b.move("A5", "C7");
+   assert(b.move("A5", "C7") == true);
    assert(b.is_game_over() == Ending::NONE);
-   b.move("D5", "E4");
+   assert(b.move("D5", "E4") == false);
    assert(b.is_game_over() == Ending::NONE);
-   b.move("E7", "E8");
+   assert(b.move("E7", "E8") == true);
    assert(b.is_game_over() == Ending::NONE);
-   b.move("E2", "H5");
+   assert(b.move("E2", "H5") == true);
    assert(b.is_game_over() == Ending::NONE);
-   b.move("D5", "C6");
+   assert(b.move("D5", "C6") == true);
    assert(b.is_game_over() == Ending::NONE);
-   b.move("E4", "E6"); // Matto bellissimo
+   assert(b.move("E4", "E6") == true); // Matto bellissimo
    assert(b.is_game_over() == Ending::WHITE_CHECKMATE);
    // Matto
    b = Board{"r4nkr/R7/2bbN3/8/2q5/8/PPB2R2/K7 w - - 0 1"};
    assert(b.is_game_over() == Ending::NONE);
-   b.move("A7", "G7");
+   assert(b.move("A7", "G7") == true);
    assert(b.is_game_over() == Ending::WHITE_CHECKMATE);
    // Matto
    b = Board{"8/pp1k4/7b/8/8/8/PP4Q1/1NRKR3 w - - 1 1"};
    assert(b.is_game_over() == Ending::NONE);
-   b.move("G2", "D5");
+   assert(b.move("G2", "D5") == true);
    assert(b.is_game_over() == Ending::WHITE_CHECKMATE);
    // Matto del nero
    b = Board{"r1b1kb1r/pppp1pp1/2n5/1B2p3/4P2q/5Pp1/PPPPQ1P1/RNB1NRK1 b kq - 2 10"};
    assert(b.is_game_over() == Ending::NONE);
-   b.move("H4", "H1");
+   assert(b.move("H4", "H1") == true);
    assert(b.is_game_over() == Ending::BLACK_CHECKMATE);
    // Matto del nero
    b = Board{"8/8/8/8/8/2k5/7q/K7 b - - 0 1"};
    assert(b.is_game_over() == Ending::NONE);
-   b.move("H2", "B2");
+   assert(b.move("H2", "B2") == true);
    assert(b.is_game_over() == Ending::BLACK_CHECKMATE);
 
    cout << "\n--------------------------CHECKMATE TEST SUCCESSFUL--------------------------\n";
@@ -308,20 +306,96 @@ void stalemate_test() {
    // Stallo con la regina
    b = Board{"8/8/8/8/8/2k5/7q/K7 b - - 0 1"};
    assert(b.is_game_over() == Ending::NONE);
-   b.move("H2", "C2");
+   assert(b.move("H2", "C2") == true);
    assert(b.is_game_over() == Ending::STALEMATE);
    // Stallo di re
    b = Board{"8/6pp/8/7K/5k1P/8/8/8 b - - 0 1"};
    assert(b.is_game_over() == Ending::NONE);
-   b.move("F4", "F5");
+   assert(b.move("F4", "F5") == true);
    assert(b.is_game_over() == Ending::STALEMATE);
    // Stallo forzato dal bianco
    b = Board{"8/1k2b3/6p1/6p1/6K1/2R5/8/1q6 w - - 0 1"};
    assert(b.is_game_over() == Ending::NONE);
-   b.move("C3", "B3");
+   assert(b.move("C3", "B3") == true);
    assert(b.is_game_over() == Ending::NONE);
-   b.move("B1", "B3");
+   assert(b.move("B1", "B3") == true);
    assert(b.is_game_over() == Ending::STALEMATE);
 
    cout << "\n--------------------------STALEMATE TEST SUCCESSFUL--------------------------\n";
+}
+
+void repetition_test() {
+   // Ripetizione classica con i cavalli
+   Board b;
+   assert(b.move("B1", "C3") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("B8", "C6") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("C3", "B1") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("C6", "B8") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("B1", "C3") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("B8", "C6") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("C3", "B1") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("C6", "B8") == true);
+   assert(b.is_game_over() == Ending::REPETITION);
+
+   cout << "\n--------------------------REPETITION TEST SUCCESSFUL--------------------------\n";
+}
+
+void insufficient_test() {
+   // Patta forzata
+   Board b{"8/6k1/2q5/8/8/2K2B2/8/8 w - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("F3", "C6") == true);
+   assert(b.is_game_over() == Ending::INSUFFICIENT_MATERIAL);
+   // Fork con materiale insufficiente
+   b = Board{"8/8/1k6/4b3/4K3/5n2/8/8 b - - 1 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("B6", "C5") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("E4", "F3") == true);
+   assert(b.is_game_over() == Ending::INSUFFICIENT_MATERIAL);
+   // Mangia tutto e resta solo un cavallo
+   b = Board{"8/5k2/2p5/3r4/2K5/2N5/8/8 w - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("C3", "D5") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("C6", "D5") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("C4", "D5") == true);
+   assert(b.is_game_over() == Ending::INSUFFICIENT_MATERIAL);
+   // Due alfieri ma sono finokki
+   b = Board{"8/5k2/7b/8/2r5/8/6K1/3B4 w - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("D1", "B3") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("F7", "F6") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("B3", "C4") == true);
+   assert(b.is_game_over() == Ending::INSUFFICIENT_MATERIAL);
+   // Re contro re
+   b = Board{"6k1/6r1/8/R5q1/7K/8/8/8 w - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("A5", "G5") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("G7", "G5") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("H4", "G5") == true);
+   assert(b.is_game_over() == Ending::INSUFFICIENT_MATERIAL);
+   // Fork alla regina con patta
+   b = Board{"8/8/3k4/6q1/8/2N5/8/5K2 w - - 0 1"};
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("C3", "E4") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("D6", "E7") == true);
+   assert(b.is_game_over() == Ending::NONE);
+   assert(b.move("E4", "G5") == true);
+   assert(b.is_game_over() == Ending::INSUFFICIENT_MATERIAL);
+
+   cout << "\n--------------------------INSUFFICIENT MATERIAL TEST SUCCESSFUL--------------------------\n";
 }

@@ -66,7 +66,7 @@ namespace Chess
          positions_to_check.push_back(mid_position);
          positions_to_check.push_back(_position);
       }
-      std::vector<Position> uncontrolled_positions(positions_to_check.size());
+      std::vector<Position> uncontrolled_positions;
       board.uncontrolled_positions(!_side, positions_to_check, uncontrolled_positions);
       if (uncontrolled_positions.size() == positions_to_check.size())
          return true; // Se le dimensioni sono uguali significa che tutte le posizioni in cui "passa" il re non sono controllate, quindi può arrivare a destinazione

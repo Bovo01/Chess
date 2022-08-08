@@ -141,6 +141,7 @@ namespace Chess
       void update_last_pawn_move(const Piece *p, const Position &from);
       void update_50_move_rule(const Piece *p, const bool eaten);
       void promote(Piece *p, PieceType promotion_type);
+      void add_position(std::vector<Piece *> pieces);
       PieceType request_promotion_type() const;
       void create_new_piece(const PieceType type, const Position pos, const Side side);
       /* FINE FUNZIONI PER IL MOVE */
