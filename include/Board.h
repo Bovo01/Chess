@@ -4,6 +4,7 @@
 #include <vector>
 #include <ostream>
 #include "Position.h"
+#include "Move.h"
 #include "Piece.h"
 #include "Rook.h"
 #include "Knight.h"
@@ -59,10 +60,11 @@ namespace Chess
       // Re
       Piece *_white_king;
       Piece *_black_king;
-      // Scacco
-      // TODO Gestisci variabile scacco
-      short _is_check{0b00};
-      // TODO Ottimizza whos_giving_check (aggiungi vector) e cells_to_block_check
+      std::vector<Move> _moves;
+      // // Scacco
+      // // TODO Gestisci variabile scacco
+      // short _is_check{0b00};
+      // // TODO Ottimizza whos_giving_check (aggiungi vector) e cells_to_block_check
 
    private:
       // Prepara la posizione iniziale riempiendo il vector _pieces
@@ -87,6 +89,8 @@ namespace Chess
       bool is_insufficient_material() const;
       // Controlla se la posizione corrente è stata già rivista 3 volte durante la partita
       bool is_repetition() const;
+      // Muove forzatamente (senza eseguire controlli) un pezzo
+      void move_forced(const Position from, const Position to, const PieceType promotion_type);
 
    public:
       // Costruttore che inizializza una partita

@@ -96,6 +96,7 @@ namespace Chess
          _positions.push_back(pieces);
       }
       initialize_matrix(); // Copia automaticamente _pieces qua dentro
+      _moves = other._moves;
    }
    /*       DISTRUTORI           */
 
@@ -172,6 +173,7 @@ namespace Chess
          _positions.push_back(pieces);
       }
       initialize_matrix(); // Copia automaticamente _pieces qua dentro
+      _moves = other._moves;
       return *this;
    }
 
@@ -745,12 +747,32 @@ namespace Chess
          promote(p, promotion_type);
          // Aggiungo la posizione attuale a _positions
          add_position(_pieces);
+         // Aggiungo la mossa appena fatta
+         _moves.push_back({from, to, eaten});
          // Cambio turno
          toggle_turn();
 
          return true;
       }
       return false;
+   }
+
+   void Board::move_forced(const Position from, const Position to, const PieceType promotion_type)
+   {
+      Piece *p = find_piece(from);
+      bool eaten = find_piece(to) != nullptr;
+      // Gestisco l'en passant per la prossima mossa
+      update_last_pawn_move(p, from);
+      // Aggiorno la regola delle 50 mosse
+      update_50_move_rule(p, eaten);
+      // Promuovo se necessario
+      promote(p, promotion_type);
+      // Aggiungo la posizione attuale a _positions
+      add_position(_pieces);
+      // Aggiungo la mossa appena fatta
+      _moves.push_back({from, to, eaten});
+      // Cambio turno
+      toggle_turn();
    }
 
    void Board::update_last_pawn_move(const Piece *p, const Position &from)
