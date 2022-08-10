@@ -3,7 +3,9 @@
 namespace Chess
 {
    Move::Move(const Position from, const Position to)
-       : Move(from, to, false) {}
+       : Move(from, to, false, KING) {}
    Move::Move(const Position from, const Position to, bool eaten)
-       : from(from), to(to), eaten(eaten) {}
+       : Move(from, to, eaten, KING) {}
+   Move::Move(const Position from, const Position to, bool eaten, PieceType promotion)
+       : from(from), to(to), eaten(eaten), promotion(promotion) {}
 }

@@ -75,7 +75,15 @@ namespace Chess
    std::string Position::to_string() const
    {
       std::string s;
-      s.push_back(((char)('A' + x)));
+      s.push_back((char)('A' + x));
+      s.push_back((char)('1' + y));
+      return s;
+   }
+
+   std::string Position::to_string_lower() const
+   {
+      std::string s;
+      s.push_back((char)('a' + x));
       s.push_back((char)('1' + y));
       return s;
    }

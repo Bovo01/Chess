@@ -474,6 +474,97 @@ namespace Chess
       return output;
    }
 
+   int Board::mossa() const
+   {
+      return _mossa;
+   }
+
+   std::string Board::get_pgn_name_type(PieceType type)
+   {
+      switch (type) {
+         case PAWN:
+            return "";
+         default:
+            std::string s = "";
+            return s + ((char) type);
+      }
+   }
+
+   std::string Board::get_pgn() const
+   {
+      std::string pgn;
+      Board b;
+      for (Move move : _moves) {
+         if (b.turn() == WHITE)
+            pgn += b.mossa() + ". ";
+         else
+            pgn += " ";
+         Piece *p_from = b.find_piece(move.from);
+         pgn += get_pgn_name_type(p_from->type()); // Pezzo che si muove
+         if (move.eaten) {
+            if (p_from->type() == PAWN)
+               pgn += 'a' + move.from.x; // Pedone, dico da dove ha mangiato
+            else {
+               // Controllo se c'è ambiguità per il pezzo che muove in to
+               std::vector<PieceType> types(p_from->type());
+               std::vector<Piece *> reach_to;
+               get_pieces(b.turn(), types, reach_to);
+               if (reach_to.size() > 1) {
+                  for (int i = reach_to.size() - 1; i >= 0; i--)
+                     if (reach_to[i]->can_move(move.to, b))
+                        reach_to.erase(reach_to.begin() + i);
+                  if (reach_to.size() > 1) {// Ho un ambiguità, tutti i pezzi in reach_to possono raggiungere move.to
+                     char row_ambiguity = 0; // Risparmio memoria con i char
+                     char col_ambiguity = 0;
+                     for (const Piece *p : reach_to) {
+                        if (p == p_from)
+                           continue;
+                        if (p->position().y == p_from->position().y)
+                           row_ambiguity++;
+                        if (p->position().x == p_from->position().x)
+                           col_ambiguity++;
+                        if (row_ambiguity > 1 && col_ambiguity > 1)
+                           break;
+                     }
+                     if (row_ambiguity > 1)
+                        pgn += 'a' + p_from->position().x;
+                     if (col_ambiguity > 1)
+                        pgn += '0' + p_from->position().y;
+                  }
+               }
+            }
+            pgn += "x"; // Mangiato
+         }
+         if (p_from->type() == KING && abs(move.from.x - move.to.x) == 2) {
+            // Arrocco lungo o corto
+            if (move.to.x == 2) // Arrocco lungo
+               pgn += "O-O-O";
+            else
+               pgn += "O-O";
+         } else
+            pgn += move.to.to_string_lower(); // Posizione finale
+         b.move_forced(move.from, move.to, move.promotion);
+         if (b.is_check(b.turn()))
+            pgn += "+";
+      }
+      switch (b.is_game_over()) {
+         case NONE:
+            break;
+         case STALEMATE:
+         case _50_MOVE_RULE:
+         case INSUFFICIENT_MATERIAL:
+         case REPETITION:
+            pgn += " 0-0";
+            break;
+         case WHITE_CHECKMATE:
+            pgn += "# 1-0";
+            break;
+         case BLACK_CHECKMATE:
+            pgn += "# 0-1";
+      }
+      return pgn;
+   }
+
    bool Board::can_castle(const Side &side, const short direction) const
    {
       short filter;
@@ -748,7 +839,9 @@ namespace Chess
          // Aggiungo la posizione attuale a _positions
          add_position(_pieces);
          // Aggiungo la mossa appena fatta
-         _moves.push_back({from, to, eaten});
+         _moves.push_back({from, to, eaten, promotion_type});
+         if (_turn == BLACK)
+            _mossa++;
          // Cambio turno
          toggle_turn();
 
@@ -770,7 +863,9 @@ namespace Chess
       // Aggiungo la posizione attuale a _positions
       add_position(_pieces);
       // Aggiungo la mossa appena fatta
-      _moves.push_back({from, to, eaten});
+      _moves.push_back({from, to, eaten, promotion_type});
+      if (_turn == BLACK)
+         _mossa++;
       // Cambio turno
       toggle_turn();
    }

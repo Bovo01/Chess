@@ -92,6 +92,8 @@ namespace Chess
       // Muove forzatamente (senza eseguire controlli) un pezzo
       void move_forced(const Position from, const Position to, const PieceType promotion_type);
 
+      static std::string get_pgn_name_type(PieceType type);
+
    public:
       // Costruttore che inizializza una partita
       Board();
@@ -176,6 +178,12 @@ namespace Chess
       std::vector<Position> &cells_to_block_check(const std::vector<Piece *> &pieces_that_give_check, const Side &side, std::vector<Position> &output) const;
       // Ritorna, nell'array output, tutte le posizioni che NON sono controllate da side, basandosi su quelle in input
       std::vector<Position> &uncontrolled_positions(const Side &side, const std::vector<Position> &positions_to_check, std::vector<Position> &output) const;
+
+      // Ritorna il numero di mosse giocate fino ad ora
+      int mossa() const;
+      /* Ritorna una stringa contenente il pgn (https://en.wikipedia.org/wiki/Portable_Game_Notation)
+         della partita giocata, a partire dalla posizione iniziale. Utile per esportare una partita */
+      std::string get_pgn() const;
 
       /*    ARROCCO    */
       // Controlla se il re dello schieramento side può arroccare (ossia non ha perso il diritto di farlo) verso la direzione 'direction' (viene considerato il segno di direction)

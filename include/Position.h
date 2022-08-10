@@ -47,6 +47,8 @@ namespace Chess
 
       // Converte l'oggetto in stringa
       std::string to_string() const;
+      // Converte l'oggetto in stringa minuscola
+      std::string to_string_lower() const;
    };
 
    std::ostream &operator<<(std::ostream &os, const Position &pos);
