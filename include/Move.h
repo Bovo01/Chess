@@ -16,6 +16,8 @@ namespace Chess
       Move(const Position from, const Position to, bool eaten);
       Move(const Position from, const Position to, bool eaten, PieceType promotion);
    };
+
+   std::ostream& operator<<(std::ostream& os, const Move move);
 }
 
 #endif // MOVE_H

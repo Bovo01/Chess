@@ -13,21 +13,28 @@ namespace Chess
    bool King::move(const Position &to, Board &board, const PieceType promotion_type)
    {
       const Position from = _position;
-      if (Piece::move(to, board, promotion_type))
+      if (can_move(to, board))
       {
-         board.lose_castling(_side, 0); // Se muovo il re, gli annullo anche l'arrocco da entrambe le direzioni
-         // In caso di arrocco sposto anche la torre
-         if (abs(from.x - to.x) == 2)
-         {
-            const short initial_row = _side == WHITE ? 0 : 7;
-            const Direction king_dir = to - from;
-            const short rook_col = king_dir.x > 0 ? 7 : 0;
-            Piece *rook = board.find_piece({rook_col, initial_row});
-            board.change_position(rook, to + king_dir.reduce().opposite());
-         }
+         move_forced(to, board, promotion_type);
          return true;
       }
       return false;
+   }
+
+   void King::move_forced(const Position &to, Board &board, const PieceType promotion_type)
+   {
+      Piece::move_forced(to, board, promotion_type);
+      const Position from = _position;
+      board.lose_castling(_side, 0); // Se muovo il re, gli annullo anche l'arrocco da entrambe le direzioni
+      // In caso di arrocco sposto anche la torre
+      if (abs(from.x - to.x) == 2)
+      {
+         const short initial_row = _side == WHITE ? 0 : 7;
+         const Direction king_dir = to - from;
+         const short rook_col = king_dir.x > 0 ? 7 : 0;
+         Piece *rook = board.find_piece({rook_col, initial_row});
+         board.change_position(rook, to + king_dir.reduce().opposite());
+      }
    }
 
    bool King::can_move(const Position &to, const Board &board) const
@@ -86,20 +93,9 @@ namespace Chess
       return false; // Il re non può dare scacco visto che non può avvicinarsi ("toccare") al re avversario
    }
 
-   void King::get_moves(const Board &board, std::vector<Position> &output) const
+   bool King::can_move_ignore_checks(const Position to, const Board &board) const
    {
-      output.clear();
-      for (short i = -1; i <= 1; i++) {
-         for (short j = -1; j <= 1; j++) {
-            const Position new_pos = _position.move(i, j);
-            if (new_pos.is_valid())
-               output.push_back(new_pos);
-         }
-      }
-      if (board.can_castle(_side, 1))
-         output.push_back(_position.move(2, 0));
-      if (board.can_castle(_side, -1))
-         output.push_back(_position.move(-2, 0));
+      return can_move(to, board);
    }
 
    bool King::has_legal_moves_ignore_checks(const Board &board) const {
@@ -132,6 +128,20 @@ namespace Chess
    Piece *King::clone() const
    {
       return new King(_position, _side);
+   }
+
+   void King::get_moves_unchecked(std::vector<Position> &positions) const
+   {
+      for (short i = -1; i <= 1; i++) {
+         for (short j = -1; j <= 1; j++) {
+            if (i == 0 && j == 0)
+               continue;
+            Direction dir = {i, j};
+            Position pos = _position + dir;
+            if (pos.is_valid())
+               positions.push_back(pos);
+         }
+      }
    }
 }
 

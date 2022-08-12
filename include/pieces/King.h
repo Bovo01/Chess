@@ -18,19 +18,19 @@ namespace Chess
       bool is_controlling(const Board &board, const Position &to) const;
       bool is_giving_check(const Board &board) const;
 
+      bool can_move_ignore_checks(const Position to, const Board &board) const;
       bool has_legal_moves_ignore_checks(const Board &board) const;
       Piece *clone() const;
 
       /* Modifica move */
 
       bool move(const Position &to, Board &board, const PieceType promotion_type);
+      void move_forced(const Position &to, Board &board, const PieceType promotion_type);
 
       /* Funzioni aggiuntive per re */
 
       bool can_reach(const Board &board, const Position &to) const;
-
-   private:
-      void get_moves(const Board &board, std::vector<Position> &output) const;
+      void get_moves_unchecked(std::vector<Position> &positions) const;
    };
 }
 

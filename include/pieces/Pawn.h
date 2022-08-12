@@ -22,10 +22,13 @@ namespace Chess
 
       bool has_legal_moves_ignore_checks(const Board &board) const;
       Piece *clone() const;
+      bool can_move_ignore_checks(const Position to, const Board &board) const;
+      void get_moves_unchecked(std::vector<Position> &positions) const;
 
       /* Modifica move */
 
       bool move(const Position &to, Board &board, const PieceType promotion_type);
+      void move_forced(const Position &to, Board &board, const PieceType promotion_type);
 
       /* Funzioni aggiuntive per pedone */
 

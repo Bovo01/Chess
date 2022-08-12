@@ -12,13 +12,19 @@ namespace Chess
 
    bool Rook::move(const Position &to, Board &board, const PieceType promotion_type)
    {
-      const Position from = _position;
-      if (Piece::move(to, board, promotion_type))
+      if (can_move(to, board))
       {
-         remove_castling_permissions(board, from); // Se la torre si è mossa, rimuovo i permessi di arrocco
+         move_forced(to, board, promotion_type);
          return true;
       }
       return false;
+   }
+
+   void Rook::move_forced(const Position &to, Board &board, const PieceType promotion_type)
+   {
+      Piece::move_forced(to, board, promotion_type);
+      const Position from = _position;
+      remove_castling_permissions(board, from); // Se la torre si è mossa, rimuovo i permessi di arrocco
    }
 
    bool Rook::can_move(const Position &to, const Board &board) const
@@ -107,6 +113,40 @@ namespace Chess
    Piece *Rook::clone() const
    {
       return new Rook(_position, _side);
+   }
+
+   bool Rook::can_move_ignore_checks(const Position to, const Board &board) const
+   {
+      if (!Piece::can_move(to, board))
+         return false;
+      // Controllo se il pezzo vede la posizione di destinazione
+      if (!is_controlling(board, to))
+         return false;
+      Direction dir = (to - _position).reduce();
+      // Controllo se sono pinnato al re
+      if (!can_move_through_pin(board, dir))
+         return false;
+      return true;
+   }
+
+   void Rook::get_moves_unchecked(std::vector<Position> &positions) const
+   {
+      for (short i = -1; i <= 1; i += 2) {
+         // Movimento orizzontale
+         Direction dir = {i, 0};
+         Position to = _position + dir;
+         while (to.is_valid()) {
+            positions.push_back(to);
+            to += dir;
+         }
+         // Movimento verticale
+         dir = {0, i};
+         to = _position + dir;
+         while (to.is_valid()) {
+            positions.push_back(to);
+            to += dir;
+         }
+      }
    }
 }
 

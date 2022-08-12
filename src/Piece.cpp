@@ -30,12 +30,17 @@ namespace Chess
    {
       if (can_move(to, board))
       {
-         remove_castling_permissions(board, to);
-         board.kill_piece(to);
-         board.change_position(this, to);
+         Piece::move_forced(to, board, promotion_type);
          return true;
       }
       return false;
+   }
+
+   void Piece::move_forced(const Position &to, Board &board, const PieceType promotion_type)
+   {
+      remove_castling_permissions(board, to);
+      board.kill_piece(to);
+      board.change_position(this, to);
    }
 
    void Piece::remove_castling_permissions(Board &board, const Position &to) const

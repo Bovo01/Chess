@@ -79,6 +79,36 @@ namespace Chess
    {
       return new Queen(_position, _side);
    }
+
+   bool Queen::can_move_ignore_checks(const Position to, const Board &board) const
+   {
+      if (!Piece::can_move(to, board))
+         return false;
+      // Controllo se il pezzo vede la posizione di destinazione
+      if (!is_controlling(board, to))
+         return false;
+      Direction dir = (to - _position).reduce();
+      // Controllo se sono pinnato al re
+      if (!can_move_through_pin(board, dir))
+         return false;
+      return true;
+   }
+
+   void Queen::get_moves_unchecked(std::vector<Position> &positions) const
+   {
+      for (short i = -1; i <= 1; i++) {
+         for (short j = -1; j <= 1; j++) {
+            if (i == 0 && j == 0)
+               continue;
+            Direction dir = {i, j};
+            Position to = _position + dir;
+            while (to.is_valid()) {
+               positions.push_back(to);
+               to += dir;
+            }
+         }
+      }
+   }
 }
 
 #endif

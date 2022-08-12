@@ -1,11 +1,13 @@
 #include <iostream>
 #include <assert.h>
+#include <fstream>
 #include "Board.h"
+#include "RandomComputer.h"
 
 using namespace std;
 using namespace Chess;
 
-
+/* Test per funzionalità varie */
 void turn_test();
 void castling_test();
 void pawn_test();
@@ -18,8 +20,21 @@ void checkmate_test();
 void stalemate_test();
 void repetition_test();
 void insufficient_test();
+// Controlla tutte le funzionalità precedenti
+void functionalities_test();
+
+/* Test per bot e pgn */
+void random_bot_test();
 
 int main() {
+   // functionalities_test();
+
+   random_bot_test();
+
+   return 0;
+}
+
+void functionalities_test() {
    /* MOVEMENT TEST */
    turn_test();
    castling_test();
@@ -32,11 +47,9 @@ int main() {
    stalemate_test();
    repetition_test();
    insufficient_test();
-
-   return 0;
 }
 
-
+/* TEST FUNZIONALITA' */
 void turn_test() {
    Board b;
    assert(b.move("A2", "A3") == true);
@@ -398,4 +411,35 @@ void insufficient_test() {
    assert(b.is_game_over() == Ending::INSUFFICIENT_MATERIAL);
 
    cout << "\n--------------------------INSUFFICIENT MATERIAL TEST SUCCESSFUL--------------------------\n";
+}
+
+
+/* TEST BOT */
+void random_bot_test(string game_name) {
+   ofstream out(game_name);
+   Board b;
+   RandomComputer bot1(b, WHITE), bot2(b, BLACK);
+   out << "Posizione iniziale:\n" << b << "\n\n";
+   int mossa;
+   Ending game_over;
+   while ((game_over = b.is_game_over()) == Ending::NONE) {
+      mossa = b.mossa();
+      if (b.turn() == WHITE)
+         bot1.move();
+      else
+         bot2.move();
+      out << "\n\nMossa : " << mossa << endl << b << endl;
+   }
+   out << "\n\n\n" << b.get_pgn() << endl;
+}
+void random_bot_test() {
+   constexpr int PARTITE = 5;
+   for (int i = 0; i < PARTITE; i++) {
+      string game_name = "bot_test";
+      // Convert the integer 'i' to a string
+      game_name += to_string(i);
+      game_name += ".txt";
+      random_bot_test(game_name);
+      cout << game_name << " completed\n";
+   }
 }

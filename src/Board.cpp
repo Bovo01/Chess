@@ -492,47 +492,51 @@ namespace Chess
 
    std::string Board::get_pgn() const
    {
+      bool first = true;
       std::string pgn;
       Board b;
+      Ending end;
       for (Move move : _moves) {
-         if (b.turn() == WHITE)
-            pgn += b.mossa() + ". ";
-         else
+         if (!first)
             pgn += " ";
+         else
+            first = false;
+         if (b.turn() == WHITE)
+            pgn += std::to_string(b.mossa()) + ". ";
          Piece *p_from = b.find_piece(move.from);
          pgn += get_pgn_name_type(p_from->type()); // Pezzo che si muove
+         if (p_from->type() != PAWN && p_from->type() != KING) {
+            // Controllo se c'è ambiguità per il pezzo che muove in to
+            std::vector<PieceType> types = {p_from->type()};
+            std::vector<Piece *> reach_to;
+            b.get_pieces(p_from->side(), types, reach_to);
+            if (reach_to.size() > 1) {
+               for (int i = reach_to.size() - 1; i >= 0; i--)
+                  if (!reach_to[i]->can_move(move.to, b))
+                     reach_to.erase(reach_to.begin() + i);
+               if (reach_to.size() > 1) {// Ho un ambiguità, tutti i pezzi in reach_to possono raggiungere move.to
+                  bool row_ambiguity = false;
+                  bool col_ambiguity = false;
+                  for (const Piece *p : reach_to) {
+                     if (p == p_from)
+                        continue;
+                     if (p->position().y == p_from->position().y)
+                        row_ambiguity = true;
+                     if (p->position().x == p_from->position().x)
+                        col_ambiguity = true;
+                     if (row_ambiguity > 1 && col_ambiguity > 1)
+                        break;
+                  }
+                  if (row_ambiguity || (!row_ambiguity && !col_ambiguity))
+                     pgn += 'a' + p_from->position().x;
+                  if (col_ambiguity)
+                     pgn += '1' + p_from->position().y;
+               }
+            }
+         }
          if (move.eaten) {
             if (p_from->type() == PAWN)
                pgn += 'a' + move.from.x; // Pedone, dico da dove ha mangiato
-            else {
-               // Controllo se c'è ambiguità per il pezzo che muove in to
-               std::vector<PieceType> types(p_from->type());
-               std::vector<Piece *> reach_to;
-               get_pieces(b.turn(), types, reach_to);
-               if (reach_to.size() > 1) {
-                  for (int i = reach_to.size() - 1; i >= 0; i--)
-                     if (reach_to[i]->can_move(move.to, b))
-                        reach_to.erase(reach_to.begin() + i);
-                  if (reach_to.size() > 1) {// Ho un ambiguità, tutti i pezzi in reach_to possono raggiungere move.to
-                     char row_ambiguity = 0; // Risparmio memoria con i char
-                     char col_ambiguity = 0;
-                     for (const Piece *p : reach_to) {
-                        if (p == p_from)
-                           continue;
-                        if (p->position().y == p_from->position().y)
-                           row_ambiguity++;
-                        if (p->position().x == p_from->position().x)
-                           col_ambiguity++;
-                        if (row_ambiguity > 1 && col_ambiguity > 1)
-                           break;
-                     }
-                     if (row_ambiguity > 1)
-                        pgn += 'a' + p_from->position().x;
-                     if (col_ambiguity > 1)
-                        pgn += '0' + p_from->position().y;
-                  }
-               }
-            }
             pgn += "x"; // Mangiato
          }
          if (p_from->type() == KING && abs(move.from.x - move.to.x) == 2) {
@@ -544,10 +548,12 @@ namespace Chess
          } else
             pgn += move.to.to_string_lower(); // Posizione finale
          b.move_forced(move.from, move.to, move.promotion);
-         if (b.is_check(b.turn()))
-            pgn += "+";
+         end = b.is_game_over();
+         if (end != WHITE_CHECKMATE && end != BLACK_CHECKMATE)
+            if (b.is_check(b.turn()))
+               pgn += "+";
       }
-      switch (b.is_game_over()) {
+      switch (end) {
          case NONE:
             break;
          case STALEMATE:
@@ -562,7 +568,43 @@ namespace Chess
          case BLACK_CHECKMATE:
             pgn += "# 0-1";
       }
+      if (end != NONE) {
+         pgn += " {";
+         pgn += ending(end);
+         pgn += "}";
+      }
       return pgn;
+   }
+
+   void Board::get_all_possible_moves(std::vector<Move>& output_moves) const
+   {
+      std::vector<Piece *> pieces;
+      get_pieces(_turn, pieces);
+      bool check = is_check(_turn);
+      if (check) { // Scacco, vedo chi può bloccare lo scacco (o al limite il re)
+         std::vector<Position> cells_to_block_c;
+         cells_to_block_check(_turn, cells_to_block_c);
+         for (const Piece *p : pieces) {
+            if (p->type() == KING) {
+               std::vector<Position> positions;
+               p->get_moves_unchecked(positions);
+               for (const Position to : positions)
+                  if (p->can_move_ignore_checks(to, *this))
+                     output_moves.push_back({p->position(), to});
+            } else
+               for (const Position pos : cells_to_block_c)
+                  if (p->can_move_ignore_checks(pos, *this))
+                     output_moves.push_back({p->position(), pos});
+         }
+      } else {
+         for (const Piece *p : pieces) {
+            std::vector<Position> positions;
+            p->get_moves_unchecked(positions);
+            for (const Position to : positions)
+               if (p->can_move_ignore_checks(to, *this))
+                  output_moves.push_back({p->position(), to});
+         }
+      }
    }
 
    bool Board::can_castle(const Side &side, const short direction) const
@@ -619,7 +661,7 @@ namespace Chess
       output.clear();
       for (Piece *p : _pieces)
       {
-         if (p->side() == side && std::find_if(types.begin(), types.end(), [&p](const PieceType pt)
+         if (p->side() == side && std::find_if(types.begin(), types.end(), [p](const PieceType pt)
                                                { return pt == p->type(); }) != types.end())
             output.push_back(p);
       }
@@ -854,6 +896,7 @@ namespace Chess
    {
       Piece *p = find_piece(from);
       bool eaten = find_piece(to) != nullptr;
+      p->move_forced(to, *this, promotion_type);
       // Gestisco l'en passant per la prossima mossa
       update_last_pawn_move(p, from);
       // Aggiorno la regola delle 50 mosse

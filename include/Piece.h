@@ -60,6 +60,8 @@ namespace Chess
 
       // Sposta il pezzo dalla posizione corrente a quella passata per parametro, eseguendo tutti i controlli necessari
       virtual bool move(const Position &to, Board &board, const PieceType promotion_type);
+      // Sposta il pezzo senza eseguire alcun controllo
+      virtual void move_forced(const Position &to, Board &board, const PieceType promotion_type);
 
       // Controlla se il pezzo attuale può muoversi alla posizione to
       virtual bool can_move(const Position &to, const Board &board) const;
@@ -84,7 +86,13 @@ namespace Chess
       // //    senza considerare gli altri pezzi nella scacchiera
       // void get_moves(std::vector<Position> &v) const;
 
+      // Copia l'oggetto corrente e ne ritorna la copia
       virtual Piece *clone() const = 0;
+
+      // Controlla se il pezzo corrente si può muovere a destinazione senza controllare se è sotto scacco
+      virtual bool can_move_ignore_checks(const Position to, const Board &board) const = 0;
+      // Ritorna tutte le mosse del pezzo corrente senza controllare il resto della scacchiera
+      virtual void get_moves_unchecked(std::vector<Position> &positions) const = 0;
 
       bool operator==(const Piece &piece) const;
       bool operator!=(const Piece &piece) const;

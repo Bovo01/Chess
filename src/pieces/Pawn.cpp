@@ -17,17 +17,22 @@ namespace Chess
    {
       if (can_move(to, board))
       {
-         remove_castling_permissions(board, to);
-         Direction diff = to - _position;
-         Piece *p_to = board.find_piece(to);
-         if (diff.is_bishop_direction() && p_to == nullptr)
-            board.kill_piece({to.x, _position.y}); // mangio in en passant
-         else
-            board.kill_piece(to); // mangio normalmente
-         board.change_position(_position, to);
+         move_forced(to, board, promotion_type);
          return true;
       }
       return false;
+   }
+
+   void Pawn::move_forced(const Position &to, Board &board, const PieceType promotion_type)
+   {
+      remove_castling_permissions(board, to);
+      Direction diff = to - _position;
+      Piece *p_to = board.find_piece(to);
+      if (diff.is_bishop_direction() && p_to == nullptr)
+         board.kill_piece({to.x, _position.y}); // mangio in en passant
+      else
+         board.kill_piece(to); // mangio normalmente
+      board.change_position(this, to);
    }
 
    bool Pawn::can_move(const Position &to, const Board &board) const
@@ -72,6 +77,8 @@ namespace Chess
          {
             if (abs(diff.y) > 2)
                return false; // Non posso muovere il pedone di 3 o più
+            if (is_obstructed(board, to, {0, _pawn_direction}));
+               return false; // Non posso muovere se qualcuno mi blocca
             // Controllo se si può muovere di 2 (quindi se è nella posizione iniziale)
             const short initial_position = _side == WHITE ? 1 : 6;
             if (_position.y != initial_position)
@@ -141,6 +148,43 @@ namespace Chess
    Piece *Pawn::clone() const
    {
       return new Pawn(_position, _side);
+   }
+
+   bool Pawn::can_move_ignore_checks(const Position to, const Board &board) const
+   {
+      if (!Piece::can_move(to, board))
+         return false;
+      // Controllo se può raggiungere la posizione di destinazione
+      if (!can_reach(board, to))
+         return false;
+      // Controllo se sono pinnato al re
+      if (!can_move_through_pin(board, to - _position))
+         return false;
+      return true;
+   }
+
+   void Pawn::get_moves_unchecked(std::vector<Position> &positions) const
+   {
+      // Push di 1
+      Direction dir = {0, _pawn_direction};
+      Position pos = _position + dir;
+      if (pos.is_valid()) {
+         positions.push_back(pos);
+         // Push di 2
+         short initial_row = _side == WHITE ? 1 : 6;
+         if (_position.y == initial_row)
+            positions.push_back(_position + Direction{0, (short) (2 * _pawn_direction)});
+      }
+      // Mangia a destra
+      dir = {1, _pawn_direction};
+      pos = _position + dir;
+      if (pos.is_valid())
+         positions.push_back(pos);
+      // Mangia a sinistra
+      dir = {-1, _pawn_direction};
+      pos = _position + dir;
+      if (pos.is_valid())
+         positions.push_back(pos);
    }
 }
 

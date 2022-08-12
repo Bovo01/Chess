@@ -89,8 +89,6 @@ namespace Chess
       bool is_insufficient_material() const;
       // Controlla se la posizione corrente è stata già rivista 3 volte durante la partita
       bool is_repetition() const;
-      // Muove forzatamente (senza eseguire controlli) un pezzo
-      void move_forced(const Position from, const Position to, const PieceType promotion_type);
 
       static std::string get_pgn_name_type(PieceType type);
 
@@ -185,12 +183,18 @@ namespace Chess
          della partita giocata, a partire dalla posizione iniziale. Utile per esportare una partita */
       std::string get_pgn() const;
 
+      // Ritorna tutte le mosse possibili nella posizione corrente e le ritorna nel vector output_moves
+      void get_all_possible_moves(std::vector<Move>& output_moves) const;
+
       /*    ARROCCO    */
       // Controlla se il re dello schieramento side può arroccare (ossia non ha perso il diritto di farlo) verso la direzione 'direction' (viene considerato il segno di direction)
       bool can_castle(const Side &side, const short direction) const;
       // Rimuove il diritto di arrocco per un certo schieramento 'side' in una certa direzione 'direction'
       // La direzione può essere positiva (per la torre 'H'), negativa (per la torre 'A') o zero (per entrambe le torri)
       void lose_castling(const Side &side, const short direction);
+      
+      // Muove forzatamente (senza eseguire controlli) un pezzo !PERICOLOSO!
+      void move_forced(const Position from, const Position to, const PieceType promotion_type);
    };
 }
 
