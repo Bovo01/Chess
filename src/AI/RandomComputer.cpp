@@ -15,10 +15,10 @@ namespace Chess
    {
       if (_board.turn() != _side)
          return; // Non è il turno di questo bot
-      std::vector<Move> moves;
+      std::vector<SimpleMove> moves;
       _board.get_all_possible_moves(moves);
       int move_index = rand() % moves.size();
-      Move move = moves[move_index];
+      SimpleMove move = moves[move_index];
       _board.move_forced(move.from, move.to, QUEEN); // TODO Aggiungi scelta promozione
    }
 }

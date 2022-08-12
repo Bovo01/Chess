@@ -104,11 +104,6 @@ namespace Chess
 
       Board operator=(const Board &&other);
 
-      // Eccezione per indicare una mossa invalida o illegale
-      class IllegalMoveException
-      {
-      };
-
       // Cerca il pezzo ad una certa posizione e lo ritorna
       Piece *find_piece(const Position &position) const;
       // Cerca il re di un certo schieramento e lo ritorna
@@ -122,6 +117,9 @@ namespace Chess
       // Sposta in modo forzato un pezzo
       void change_position(Piece *p, const Position &to);
 
+      // Ritorna tutti i pezzi della scacchiera all'interno del vector 'output'
+      void get_pieces(std::vector<Piece *> &output) const;
+
       // Getter per i pezzi di nero e bianco, in base al side passato
       // Copia i pezzi nel vector passato come output
       void get_pieces(Side side, std::vector<Piece *> &output) const;
@@ -134,12 +132,17 @@ namespace Chess
       // Ritorna la colonna in cui si è mosso l'ultimo pedone di 2. Se la mossa precedente non si è mosso nessun pedone di 2, ritorna -1
       short get_en_passant_column() const;
 
+      BoardStatus get_board_current_status() const;
+
       // Metodo che elimina il pezzo alla posizione indicata dal vettore _pieces
       void kill_piece(const Position &position);
 
       // Sposta un pezzo dalla posizione 'from' alla posizione 'to'
       // Lancia una eccezione, se per qualche motivo la mossa non è valida
       bool move(const Position from, const Position to, const PieceType promotion_type = PieceType::KING);
+      bool move(const SimpleMove &move);
+
+      void register_move(const Position from, const Position to, const PieceType from_type, const PieceType to_type, const bool eaten, const PieceType promotion_type);
 
       /* FUNZIONI PER IL MOVE */
       void update_last_pawn_move(const Piece *p, const Position &from);
@@ -184,7 +187,7 @@ namespace Chess
       std::string get_pgn() const;
 
       // Ritorna tutte le mosse possibili nella posizione corrente e le ritorna nel vector output_moves
-      void get_all_possible_moves(std::vector<Move>& output_moves) const;
+      void get_all_possible_moves(std::vector<SimpleMove>& output_moves) const;
 
       /*    ARROCCO    */
       // Controlla se il re dello schieramento side può arroccare (ossia non ha perso il diritto di farlo) verso la direzione 'direction' (viene considerato il segno di direction)
@@ -195,6 +198,10 @@ namespace Chess
       
       // Muove forzatamente (senza eseguire controlli) un pezzo !PERICOLOSO!
       void move_forced(const Position from, const Position to, const PieceType promotion_type);
+      void move_forced(SimpleMove &move);
+
+      // Annulla l'ultima mossa effettuata
+      void undo_move();
    };
 }
 

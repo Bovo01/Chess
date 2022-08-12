@@ -534,7 +534,7 @@ namespace Chess
                }
             }
          }
-         if (move.eaten) {
+         if (move.eaten_piece != KING) {
             if (p_from->type() == PAWN)
                pgn += 'a' + move.from.x; // Pedone, dico da dove ha mangiato
             pgn += "x"; // Mangiato
@@ -576,7 +576,7 @@ namespace Chess
       return pgn;
    }
 
-   void Board::get_all_possible_moves(std::vector<Move>& output_moves) const
+   void Board::get_all_possible_moves(std::vector<SimpleMove>& output_moves) const
    {
       std::vector<Piece *> pieces;
       get_pieces(_turn, pieces);
@@ -655,6 +655,10 @@ namespace Chess
       }
    }
 
+   void Board::get_pieces(std::vector<Piece *> &output) const {
+      output = _pieces;
+   }
+
    void Board::get_pieces(Side side, std::vector<PieceType> types, std::vector<Piece *> &output) const
    {
       // Svuota vector output
@@ -672,9 +676,12 @@ namespace Chess
       return _last_pawn_move;
    }
 
+   BoardStatus Board::get_board_current_status() const {
+      return {_last_pawn_move, _castling_permissions, _semimosse_50_move_rule};
+   }
+
    /* CONTROLLO FINALI */
 
-   // TODO Controlla finale
    bool Board::is_insufficient_material() const
    {
       short white_bishop_color = -1,
@@ -785,7 +792,6 @@ namespace Chess
       }
    }
 
-   // TODO Controlla finale
    bool Board::is_repetition(void) const
    {
       for (int i = 0; i < _positions.size(); i++)
@@ -864,14 +870,21 @@ namespace Chess
       _pieces_grid[p->position().y][p->position().x] = p;
    }
 
+   bool Board::move(const SimpleMove &move) {
+      return this->move(move.from, move.to, move.promotion);
+   }
+
    bool Board::move(const Position from, const Position to, const PieceType promotion_type)
    {
       Piece *p = find_piece(from);
-      if (p->side() != _turn)
+      if (p->side() != _turn || p == nullptr)
          return false;
-      bool eaten = find_piece(to) != nullptr;
+      int num_pieces = _pieces.size();
+      PieceType from_type = p->type();
+      PieceType to_type = find_piece(to) == nullptr ? KING : find_piece(to)->type();
       if (p->move(to, *this, promotion_type))
       {
+         bool eaten = num_pieces != _pieces.size();
          // Gestisco l'en passant per la prossima mossa
          update_last_pawn_move(p, from);
          // Aggiorno la regola delle 50 mosse
@@ -881,10 +894,10 @@ namespace Chess
          // Aggiungo la posizione attuale a _positions
          add_position(_pieces);
          // Aggiungo la mossa appena fatta
-         _moves.push_back({from, to, eaten, promotion_type});
+         register_move(from, to, from_type, to_type, eaten, promotion_type);
+         // Cambio turno e numero di mossa
          if (_turn == BLACK)
             _mossa++;
-         // Cambio turno
          toggle_turn();
 
          return true;
@@ -892,11 +905,26 @@ namespace Chess
       return false;
    }
 
+   void Board::register_move(const Position from, const Position to, const PieceType from_type, const PieceType to_type, const bool eaten, const PieceType promotion_type) {
+      if (from_type == PAWN && to_type == KING && eaten)
+         // Mangiato en passant
+         _moves.push_back({from, to, PAWN, {from.y, to.x}, promotion_type, get_board_current_status()});
+      else
+         _moves.push_back({from, to, to_type, to, promotion_type, get_board_current_status()});
+   }
+
+   void Board::move_forced(SimpleMove &move) {
+      return move_forced(move.from, move.to, move.promotion);
+   }
+
    void Board::move_forced(const Position from, const Position to, const PieceType promotion_type)
    {
       Piece *p = find_piece(from);
-      bool eaten = find_piece(to) != nullptr;
+      int num_pieces = _pieces.size();
+      PieceType from_type = p->type();
+      PieceType to_type = find_piece(to) == nullptr ? KING : find_piece(to)->type();
       p->move_forced(to, *this, promotion_type);
+      bool eaten = num_pieces != _pieces.size();
       // Gestisco l'en passant per la prossima mossa
       update_last_pawn_move(p, from);
       // Aggiorno la regola delle 50 mosse
@@ -906,10 +934,45 @@ namespace Chess
       // Aggiungo la posizione attuale a _positions
       add_position(_pieces);
       // Aggiungo la mossa appena fatta
-      _moves.push_back({from, to, eaten, promotion_type});
+      register_move(from, to, from_type, to_type, eaten, promotion_type);
+      // Cambio turno e numero di mossa
       if (_turn == BLACK)
          _mossa++;
-      // Cambio turno
+      toggle_turn();
+   }
+
+   void Board::undo_move()
+   {
+      if (_positions.size() == 0)
+         return; // Non sono state effettuate mosse
+      // Schieramento in cui annullo la mossa (WHITE se l'ultima mossa era del bianco)
+      const Side side = !_turn;
+      // Faccio tornare indietro il pezzo mosso precedentemente
+      Move lastMove = _moves.back();
+      _moves.pop_back();
+      if (lastMove.promotion != KING) {
+         // Ho promosso => ripristino il pedone e rimuovo il nuovo pezzo
+         kill_piece(lastMove.to);
+         create_new_piece(PAWN, lastMove.from, side);
+      } else {
+         // Non ho promosso => sposto indietro il pezzo spostato
+         change_position(lastMove.to, lastMove.from);
+      }
+      // Ripristino eventuale pezzo mangiato
+      PieceType eaten_piece = lastMove.eaten_piece;
+      if (eaten_piece != KING) {
+         create_new_piece(eaten_piece, lastMove.eaten_piece_position, !side);
+      }
+      // Ripristino stati
+      BoardStatus previous_status = lastMove.previous_status;
+      _castling_permissions = previous_status.castling_status;
+      _last_pawn_move = previous_status.en_passant_column;
+      _semimosse_50_move_rule = previous_status.semimosse_50_move_rule;
+      // Rimuovo l'ultima posizione
+      _positions.pop_back();
+      // Cambio mossa e turno
+      if (_turn == WHITE)
+         _mossa--;
       toggle_turn();
    }
 
