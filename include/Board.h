@@ -40,6 +40,9 @@ namespace Chess
       Side _turn{WHITE};
 
       /* VARIABILI UTILI PER MANTENERE LO STATO DELLA PARTITA */
+      // Posizione iniziale sotto forma di FEN
+      std::string _initial_position_FEN;
+      static const std::string INITIAL_POSITION_FEN;
       // controlli arrocco
       // Primi due bit rappresentano il bianco, terzo e quarto bit sono per il nero
       // Primo bit di entrambi i blocchi rappresenta arrocco verso la torre 'A' (verso sinistra per il bianco)
@@ -132,6 +135,7 @@ namespace Chess
       // Ritorna la colonna in cui si è mosso l'ultimo pedone di 2. Se la mossa precedente non si è mosso nessun pedone di 2, ritorna -1
       short get_en_passant_column() const;
 
+      // Ritorna le variabili di stato necessarie a salvare lo stato della partita
       BoardStatus get_board_current_status() const;
 
       // Metodo che elimina il pezzo alla posizione indicata dal vettore _pieces
@@ -142,12 +146,12 @@ namespace Chess
       bool move(const Position from, const Position to, const PieceType promotion_type = PieceType::KING);
       bool move(const SimpleMove &move);
 
-      void register_move(const Position from, const Position to, const PieceType from_type, const PieceType to_type, const bool eaten, const PieceType promotion_type);
+      void register_move(const Position from, const Position to, const PieceType from_type, const PieceType to_type, const bool eaten, const PieceType promotion_type, const BoardStatus board_status);
 
       /* FUNZIONI PER IL MOVE */
       void update_last_pawn_move(const Piece *p, const Position &from);
       void update_50_move_rule(const Piece *p, const bool eaten);
-      void promote(Piece *p, PieceType promotion_type);
+      bool promote(Piece *p, PieceType promotion_type);
       void add_position(std::vector<Piece *> pieces);
       PieceType request_promotion_type() const;
       void create_new_piece(const PieceType type, const Position pos, const Side side);
@@ -198,7 +202,7 @@ namespace Chess
       
       // Muove forzatamente (senza eseguire controlli) un pezzo !PERICOLOSO!
       void move_forced(const Position from, const Position to, const PieceType promotion_type);
-      void move_forced(SimpleMove &move);
+      void move_forced(const SimpleMove &move);
 
       // Annulla l'ultima mossa effettuata
       void undo_move();

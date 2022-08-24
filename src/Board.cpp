@@ -28,25 +28,31 @@ namespace Chess
       }
    }
 
+   /*    VARIABILI STATICHE   */
+
+   const std::string Board::INITIAL_POSITION_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
    /*       COSTRUTTORI       */
 
    Board::Board()
-       : _pieces(std::vector<Piece *>())
+       : _pieces(std::vector<Piece *>()), _initial_position_FEN(INITIAL_POSITION_FEN)
    {
       _pieces.reserve(32);
       initialize();
       initialize_matrix();
    }
 
-   // rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1
    Board::Board(std::string FEN)
-       : _pieces(std::vector<Piece *>())
+       : _pieces(std::vector<Piece *>()), _initial_position_FEN(FEN)
    {
       initialize_matrix();
       initialize_FEN(FEN);
    }
 
    Board::Board(const Board &other)
+       : _turn(other._turn), _castling_permissions(other._castling_permissions),
+         _last_pawn_move(other._last_pawn_move), _semimosse_50_move_rule(other._semimosse_50_move_rule),
+         _mossa(other._mossa), _moves(other._moves), _initial_position_FEN(other._initial_position_FEN)
    {
       for (Piece *p : _pieces)
          if (p)
@@ -71,11 +77,6 @@ namespace Chess
          else
             _pieces.push_back(p->clone());
       }
-      _turn = other._turn;
-      _castling_permissions = other._castling_permissions;
-      _last_pawn_move = other._last_pawn_move;
-      _semimosse_50_move_rule = other._semimosse_50_move_rule;
-      _mossa = other._mossa;
       for (std::vector<Piece *> positions : _positions)
       {
          for (Piece *p : positions)
@@ -96,7 +97,6 @@ namespace Chess
          _positions.push_back(pieces);
       }
       initialize_matrix(); // Copia automaticamente _pieces qua dentro
-      _moves = other._moves;
    }
    /*       DISTRUTORI           */
 
@@ -174,6 +174,7 @@ namespace Chess
       }
       initialize_matrix(); // Copia automaticamente _pieces qua dentro
       _moves = other._moves;
+      _initial_position_FEN = other._initial_position_FEN;
       return *this;
    }
 
@@ -479,125 +480,35 @@ namespace Chess
       return _mossa;
    }
 
-   std::string Board::get_pgn_name_type(PieceType type)
-   {
-      switch (type) {
-         case PAWN:
-            return "";
-         default:
-            std::string s = "";
-            return s + ((char) type);
-      }
-   }
-
-   std::string Board::get_pgn() const
-   {
-      bool first = true;
-      std::string pgn;
-      Board b;
-      Ending end;
-      for (Move move : _moves) {
-         if (!first)
-            pgn += " ";
-         else
-            first = false;
-         if (b.turn() == WHITE)
-            pgn += std::to_string(b.mossa()) + ". ";
-         Piece *p_from = b.find_piece(move.from);
-         pgn += get_pgn_name_type(p_from->type()); // Pezzo che si muove
-         if (p_from->type() != PAWN && p_from->type() != KING) {
-            // Controllo se c'è ambiguità per il pezzo che muove in to
-            std::vector<PieceType> types = {p_from->type()};
-            std::vector<Piece *> reach_to;
-            b.get_pieces(p_from->side(), types, reach_to);
-            if (reach_to.size() > 1) {
-               for (int i = reach_to.size() - 1; i >= 0; i--)
-                  if (!reach_to[i]->can_move(move.to, b))
-                     reach_to.erase(reach_to.begin() + i);
-               if (reach_to.size() > 1) {// Ho un ambiguità, tutti i pezzi in reach_to possono raggiungere move.to
-                  bool row_ambiguity = false;
-                  bool col_ambiguity = false;
-                  for (const Piece *p : reach_to) {
-                     if (p == p_from)
-                        continue;
-                     if (p->position().y == p_from->position().y)
-                        row_ambiguity = true;
-                     if (p->position().x == p_from->position().x)
-                        col_ambiguity = true;
-                     if (row_ambiguity > 1 && col_ambiguity > 1)
-                        break;
-                  }
-                  if (row_ambiguity || (!row_ambiguity && !col_ambiguity))
-                     pgn += 'a' + p_from->position().x;
-                  if (col_ambiguity)
-                     pgn += '1' + p_from->position().y;
-               }
-            }
-         }
-         if (move.eaten_piece != KING) {
-            if (p_from->type() == PAWN)
-               pgn += 'a' + move.from.x; // Pedone, dico da dove ha mangiato
-            pgn += "x"; // Mangiato
-         }
-         if (p_from->type() == KING && abs(move.from.x - move.to.x) == 2) {
-            // Arrocco lungo o corto
-            if (move.to.x == 2) // Arrocco lungo
-               pgn += "O-O-O";
-            else
-               pgn += "O-O";
-         } else
-            pgn += move.to.to_string_lower(); // Posizione finale
-         b.move_forced(move.from, move.to, move.promotion);
-         end = b.is_game_over();
-         if (end != WHITE_CHECKMATE && end != BLACK_CHECKMATE)
-            if (b.is_check(b.turn()))
-               pgn += "+";
-      }
-      switch (end) {
-         case NONE:
-            break;
-         case STALEMATE:
-         case _50_MOVE_RULE:
-         case INSUFFICIENT_MATERIAL:
-         case REPETITION:
-            pgn += " 0-0";
-            break;
-         case WHITE_CHECKMATE:
-            pgn += "# 1-0";
-            break;
-         case BLACK_CHECKMATE:
-            pgn += "# 0-1";
-      }
-      if (end != NONE) {
-         pgn += " {";
-         pgn += ending(end);
-         pgn += "}";
-      }
-      return pgn;
-   }
-
-   void Board::get_all_possible_moves(std::vector<SimpleMove>& output_moves) const
+   void Board::get_all_possible_moves(std::vector<SimpleMove> &output_moves) const
    {
       std::vector<Piece *> pieces;
       get_pieces(_turn, pieces);
       bool check = is_check(_turn);
-      if (check) { // Scacco, vedo chi può bloccare lo scacco (o al limite il re)
+      if (check)
+      { // Scacco, vedo chi può bloccare lo scacco (o al limite il re)
          std::vector<Position> cells_to_block_c;
          cells_to_block_check(_turn, cells_to_block_c);
-         for (const Piece *p : pieces) {
-            if (p->type() == KING) {
+         for (const Piece *p : pieces)
+         {
+            if (p->type() == KING)
+            {
                std::vector<Position> positions;
                p->get_moves_unchecked(positions);
                for (const Position to : positions)
                   if (p->can_move_ignore_checks(to, *this))
                      output_moves.push_back({p->position(), to});
-            } else
+            }
+            else
                for (const Position pos : cells_to_block_c)
                   if (p->can_move_ignore_checks(pos, *this))
                      output_moves.push_back({p->position(), pos});
          }
-      } else {
-         for (const Piece *p : pieces) {
+      }
+      else
+      {
+         for (const Piece *p : pieces)
+         {
             std::vector<Position> positions;
             p->get_moves_unchecked(positions);
             for (const Position to : positions)
@@ -655,7 +566,8 @@ namespace Chess
       }
    }
 
-   void Board::get_pieces(std::vector<Piece *> &output) const {
+   void Board::get_pieces(std::vector<Piece *> &output) const
+   {
       output = _pieces;
    }
 
@@ -676,8 +588,123 @@ namespace Chess
       return _last_pawn_move;
    }
 
-   BoardStatus Board::get_board_current_status() const {
+   BoardStatus Board::get_board_current_status() const
+   {
       return {_last_pawn_move, _castling_permissions, _semimosse_50_move_rule};
+   }
+
+   std::string Board::get_pgn_name_type(PieceType type)
+   {
+      switch (type)
+      {
+      case PAWN:
+         return "";
+      default:
+         std::string s = "";
+         return s + ((char)type);
+      }
+   }
+
+   std::string Board::get_pgn() const
+   {
+      bool first = true;
+      std::string pgn;
+      Board b{_initial_position_FEN};
+      if (_initial_position_FEN != INITIAL_POSITION_FEN) {
+         // Aggiungo la posizione iniziale
+         pgn += "[FEN \"";
+         pgn += _initial_position_FEN;
+         pgn += "\"]\n\n";
+      }
+      Ending end;
+      for (const Move move : _moves)
+      {
+         if (!first)
+            pgn += " ";
+         else
+            first = false;
+         if (b.turn() == WHITE)
+            pgn += std::to_string(b.mossa()) + ". ";
+         Piece *p_from = b.find_piece(move.from);
+         pgn += get_pgn_name_type(p_from->type()); // Pezzo che si muove
+         if (p_from->type() != PAWN && p_from->type() != KING)
+         {
+            // Controllo se c'è ambiguità per il pezzo che muove in to
+            std::vector<PieceType> types = {p_from->type()};
+            std::vector<Piece *> reach_to;
+            b.get_pieces(p_from->side(), types, reach_to);
+            if (reach_to.size() > 1)
+            {
+               for (int i = reach_to.size() - 1; i >= 0; i--)
+                  if (!reach_to[i]->can_move(move.to, b))
+                     reach_to.erase(reach_to.begin() + i);
+               if (reach_to.size() > 1)
+               { // Ho un ambiguità, tutti i pezzi in reach_to possono raggiungere move.to
+                  bool row_ambiguity = false;
+                  bool col_ambiguity = false;
+                  for (const Piece *p : reach_to)
+                  {
+                     if (p == p_from)
+                        continue;
+                     if (p->position().y == p_from->position().y)
+                        row_ambiguity = true;
+                     if (p->position().x == p_from->position().x)
+                        col_ambiguity = true;
+                     if (row_ambiguity > 1 && col_ambiguity > 1)
+                        break;
+                  }
+                  if (row_ambiguity || (!row_ambiguity && !col_ambiguity))
+                     pgn += 'a' + p_from->position().x;
+                  if (col_ambiguity)
+                     pgn += '1' + p_from->position().y;
+               }
+            }
+         }
+         if (move.eaten_piece != KING)
+         {
+            if (p_from->type() == PAWN)
+               pgn += 'a' + move.from.x; // Pedone, dico da dove ha mangiato
+            pgn += "x";                  // Mangiato
+         }
+         if (p_from->type() == KING && abs(move.from.x - move.to.x) == 2)
+         {
+            // Arrocco lungo o corto
+            if (move.to.x == 2) // Arrocco lungo
+               pgn += "O-O-O";
+            else
+               pgn += "O-O";
+         }
+         else
+            pgn += move.to.to_string_lower(); // Posizione finale
+         b.move_forced(move.from, move.to, move.promotion);
+         end = b.is_game_over();
+         if (end != WHITE_CHECKMATE && end != BLACK_CHECKMATE)
+            if (b.is_check(b.turn()))
+               pgn += "+";
+      }
+      switch (end)
+      {
+      case NONE:
+         break;
+      case STALEMATE:
+      case _50_MOVE_RULE:
+      case INSUFFICIENT_MATERIAL:
+      case REPETITION:
+         pgn += " 0-0";
+         break;
+      case WHITE_CHECKMATE:
+         pgn += "# 1-0";
+         break;
+      case BLACK_CHECKMATE:
+         pgn += "# 0-1";
+      }
+      if (end != NONE)
+      {
+         pgn += " {";
+         pgn += ending(end);
+         pgn += "}";
+      }
+      return pgn;
    }
 
    /* CONTROLLO FINALI */
@@ -845,6 +872,7 @@ namespace Chess
          os << c;
       return os;
    }
+
    /*       FUNZIONALITA' DI GIOCO       */
 
    Piece *Board::find_piece(const Position &position) const
@@ -870,7 +898,8 @@ namespace Chess
       _pieces_grid[p->position().y][p->position().x] = p;
    }
 
-   bool Board::move(const SimpleMove &move) {
+   bool Board::move(const SimpleMove &move)
+   {
       return this->move(move.from, move.to, move.promotion);
    }
 
@@ -880,21 +909,25 @@ namespace Chess
       if (p->side() != _turn || p == nullptr)
          return false;
       int num_pieces = _pieces.size();
-      PieceType from_type = p->type();
-      PieceType to_type = find_piece(to) == nullptr ? KING : find_piece(to)->type();
+      const PieceType from_type = p->type();
+      const PieceType to_type = find_piece(to) == nullptr ? KING : find_piece(to)->type();
       if (p->move(to, *this, promotion_type))
       {
-         bool eaten = num_pieces != _pieces.size();
+         const BoardStatus previous_status = get_board_current_status();
+         const bool eaten = num_pieces != _pieces.size();
          // Gestisco l'en passant per la prossima mossa
          update_last_pawn_move(p, from);
          // Aggiorno la regola delle 50 mosse
          update_50_move_rule(p, eaten);
-         // Promuovo se necessario
-         promote(p, promotion_type);
          // Aggiungo la posizione attuale a _positions
          add_position(_pieces);
-         // Aggiungo la mossa appena fatta
-         register_move(from, to, from_type, to_type, eaten, promotion_type);
+         // Promuovo se necessario
+         if (promote(p, promotion_type))
+            // Aggiungo la mossa appena fatta
+            register_move(from, to, from_type, to_type, eaten, promotion_type, previous_status);
+         else
+            // Aggiungo la mossa appena fatta
+            register_move(from, to, from_type, to_type, eaten, KING, previous_status);
          // Cambio turno e numero di mossa
          if (_turn == BLACK)
             _mossa++;
@@ -905,36 +938,42 @@ namespace Chess
       return false;
    }
 
-   void Board::register_move(const Position from, const Position to, const PieceType from_type, const PieceType to_type, const bool eaten, const PieceType promotion_type) {
+   void Board::register_move(const Position from, const Position to, const PieceType from_type, const PieceType to_type, const bool eaten, const PieceType promotion_type, const BoardStatus board_status)
+   {
       if (from_type == PAWN && to_type == KING && eaten)
          // Mangiato en passant
-         _moves.push_back({from, to, PAWN, {from.y, to.x}, promotion_type, get_board_current_status()});
+         _moves.push_back({from, to, PAWN, {from.y, to.x}, promotion_type, board_status});
       else
-         _moves.push_back({from, to, to_type, to, promotion_type, get_board_current_status()});
+         _moves.push_back({from, to, to_type, to, promotion_type, board_status});
    }
 
-   void Board::move_forced(SimpleMove &move) {
-      return move_forced(move.from, move.to, move.promotion);
+   void Board::move_forced(const SimpleMove &move)
+   {
+      move_forced(move.from, move.to, move.promotion);
    }
 
    void Board::move_forced(const Position from, const Position to, const PieceType promotion_type)
    {
+      const BoardStatus previous_status = get_board_current_status();
       Piece *p = find_piece(from);
       int num_pieces = _pieces.size();
-      PieceType from_type = p->type();
-      PieceType to_type = find_piece(to) == nullptr ? KING : find_piece(to)->type();
+      const PieceType from_type = p->type();
+      const PieceType to_type = find_piece(to) == nullptr ? KING : find_piece(to)->type();
       p->move_forced(to, *this, promotion_type);
-      bool eaten = num_pieces != _pieces.size();
+      const bool eaten = num_pieces != _pieces.size();
       // Gestisco l'en passant per la prossima mossa
       update_last_pawn_move(p, from);
       // Aggiorno la regola delle 50 mosse
       update_50_move_rule(p, eaten);
       // Promuovo se necessario
-      promote(p, promotion_type);
+      if (promote(p, promotion_type))
+         // Aggiungo la mossa appena fatta
+         register_move(from, to, from_type, to_type, eaten, promotion_type, previous_status);
+      else
+         // Aggiungo la mossa appena fatta
+         register_move(from, to, from_type, to_type, eaten, KING, previous_status);
       // Aggiungo la posizione attuale a _positions
       add_position(_pieces);
-      // Aggiungo la mossa appena fatta
-      register_move(from, to, from_type, to_type, eaten, promotion_type);
       // Cambio turno e numero di mossa
       if (_turn == BLACK)
          _mossa++;
@@ -950,19 +989,21 @@ namespace Chess
       // Faccio tornare indietro il pezzo mosso precedentemente
       Move lastMove = _moves.back();
       _moves.pop_back();
-      if (lastMove.promotion != KING) {
+      if (lastMove.promotion != KING)
+      {
          // Ho promosso => ripristino il pedone e rimuovo il nuovo pezzo
          kill_piece(lastMove.to);
          create_new_piece(PAWN, lastMove.from, side);
-      } else {
+      }
+      else
+      {
          // Non ho promosso => sposto indietro il pezzo spostato
          change_position(lastMove.to, lastMove.from);
       }
       // Ripristino eventuale pezzo mangiato
       PieceType eaten_piece = lastMove.eaten_piece;
-      if (eaten_piece != KING) {
+      if (eaten_piece != KING)
          create_new_piece(eaten_piece, lastMove.eaten_piece_position, !side);
-      }
       // Ripristino stati
       BoardStatus previous_status = lastMove.previous_status;
       _castling_permissions = previous_status.castling_status;
@@ -998,7 +1039,7 @@ namespace Chess
       }
    }
 
-   void Board::promote(Piece *p, PieceType promotion_type)
+   bool Board::promote(Piece *p, PieceType promotion_type)
    {
       if (p->type() == PAWN)
       {
@@ -1012,8 +1053,10 @@ namespace Chess
             Side promotion_side = p->side();
             kill_piece(promotion_pos);
             create_new_piece(promotion_type, promotion_pos, promotion_side);
+            return true;
          }
       }
+      return false;
    }
 
    PieceType Board::request_promotion_type() const

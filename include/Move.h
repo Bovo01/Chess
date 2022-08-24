@@ -32,7 +32,9 @@ namespace Chess
       Move(const Position from, const Position to, const PieceType eaten_piece, const Position eaten_piece_position, const PieceType promotion, BoardStatus previous_status);
    };
 
+   std::ostream& operator<<(std::ostream& os, const SimpleMove move);
    std::ostream& operator<<(std::ostream& os, const Move move);
+   std::ostream& operator<<(std::ostream& os, const BoardStatus move);
 }
 
 #endif // MOVE_H

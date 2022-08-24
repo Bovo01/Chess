@@ -89,7 +89,7 @@ namespace Chess
       for (short i = -1; i <= 1; i += 2) {
          for (short j = -2; j <= 2; j+= 4) {
             Direction dir1 = {i, j};
-            Direction dir2 = {i, j};
+            Direction dir2 = {j, i};
             Position pos1 = _position + dir1;
             Position pos2 = _position + dir2;
             if (pos1.is_valid())

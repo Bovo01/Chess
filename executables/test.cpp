@@ -3,6 +3,7 @@
 #include <fstream>
 #include "Board.h"
 #include "RandomComputer.h"
+#include "DepthComputer.h"
 
 using namespace std;
 using namespace Chess;
@@ -25,16 +26,22 @@ void functionalities_test();
 
 /* Test per bot e pgn */
 void random_bot_test();
+void depth_bot_test();
+// Controlla tutti i bot precedenti
+void bot_test();
 
-int main() {
+int main()
+{
    // functionalities_test();
 
-   random_bot_test();
+   depth_bot_test();
 
    return 0;
 }
 
-void functionalities_test() {
+/* UNIONE DI PIU' TEST */
+void functionalities_test()
+{
    /* MOVEMENT TEST */
    turn_test();
    castling_test();
@@ -48,9 +55,15 @@ void functionalities_test() {
    repetition_test();
    insufficient_test();
 }
+void bot_test()
+{
+   random_bot_test();
+   depth_bot_test();
+}
 
 /* TEST FUNZIONALITA' */
-void turn_test() {
+void turn_test()
+{
    Board b;
    assert(b.move("A2", "A3") == true);
    assert(b.move("A3", "A4") == false);
@@ -73,7 +86,8 @@ void turn_test() {
    cout << "\n--------------------------TURN TEST SUCCESSFUL--------------------------\n";
 }
 
-void castling_test() {
+void castling_test()
+{
    // Arrocco semplice
    Board b{"rnbqk2r/pppp1ppp/3b1n2/4p3/4P3/3B1N2/PPPP1PPP/RNBQK2R w KQkq - 4 4"};
    assert(b.move("E1", "G1") == true);
@@ -106,13 +120,15 @@ void castling_test() {
    cout << "\n--------------------------CASTLING TEST SUCCESSFUL--------------------------\n";
 }
 
-void pawn_test() {
+void pawn_test()
+{
    en_passant_test();
    promotion_test();
 
    cout << "\n--------------------------PAWN TEST SUCCESSFUL--------------------------\n";
 }
-void en_passant_test() {
+void en_passant_test()
+{
    // Classico en passant
    Board b{"rnbqkbnr/pppp1ppp/4p3/4P3/8/8/PPPP1PPP/RNBQKBNR b KQkq - 0 2"};
    assert(b.move("D7", "D5") == true);
@@ -142,7 +158,8 @@ void en_passant_test() {
 
    cout << "\n--------------------------EN PASSANT TEST SUCCESSFUL--------------------------";
 }
-void promotion_test() {
+void promotion_test()
+{
    // Problema della promozione : se non inserisco il pezzo a cui promuovere me lo chiede in input finché non lo inserisco
 
    // Promozione a donna
@@ -165,7 +182,8 @@ void promotion_test() {
    cout << "\n--------------------------PROMOTION TEST SUCCESSFUL--------------------------";
 }
 
-void pin_test() {
+void pin_test()
+{
    // Pedone pinnato dalla regina
    Board b = Board{"rnbqkbnr/pppp1ppp/8/4p2Q/4P3/8/PPPP1PPP/RNB1KBNR b KQkq - 1 2"};
    assert(b.move("F7", "F6") == false);
@@ -226,7 +244,8 @@ void pin_test() {
    cout << "\n--------------------------PIN TEST SUCCESSFUL--------------------------\n";
 }
 
-void check_test() {
+void check_test()
+{
    // Blocco e mangio la regina che scacca
    Board b{"rnb1kb1r/ppp2ppp/3p1n2/8/8/3PqN2/PPP2PPP/RNB1KB1R w KQkq - 0 8"};
    assert(b.move("H1", "G1") == false);
@@ -260,8 +279,8 @@ void check_test() {
    cout << "\n--------------------------CHECK TEST SUCCESSFUL--------------------------\n";
 }
 
-
-void checkmate_test() {
+void checkmate_test()
+{
    // Matto
    Board b{"r1bqkbnr/pppp1Qpp/8/4p3/2BnP3/8/PPPP1PPP/RNB1K1NR b KQkq - 0 4"};
    assert(b.is_game_over() == Ending::WHITE_CHECKMATE);
@@ -309,7 +328,8 @@ void checkmate_test() {
    cout << "\n--------------------------CHECKMATE TEST SUCCESSFUL--------------------------\n";
 }
 
-void stalemate_test() {
+void stalemate_test()
+{
    // Stallo con tutti i pezzi ancora in vita
    Board b{"rn2k1nr/pp4pp/3p4/q1pP4/P1P2p1b/1b2pPRP/1P1NP1PQ/2B1KBNR w Kkq - 0 13"};
    assert(b.is_game_over() == Ending::STALEMATE);
@@ -337,7 +357,8 @@ void stalemate_test() {
    cout << "\n--------------------------STALEMATE TEST SUCCESSFUL--------------------------\n";
 }
 
-void repetition_test() {
+void repetition_test()
+{
    // Ripetizione classica con i cavalli
    Board b;
    assert(b.move("B1", "C3") == true);
@@ -360,7 +381,8 @@ void repetition_test() {
    cout << "\n--------------------------REPETITION TEST SUCCESSFUL--------------------------\n";
 }
 
-void insufficient_test() {
+void insufficient_test()
+{
    // Patta forzata
    Board b{"8/6k1/2q5/8/8/2K2B2/8/8 w - - 0 1"};
    assert(b.is_game_over() == Ending::NONE);
@@ -413,28 +435,33 @@ void insufficient_test() {
    cout << "\n--------------------------INSUFFICIENT MATERIAL TEST SUCCESSFUL--------------------------\n";
 }
 
-
 /* TEST BOT */
-void random_bot_test(string game_name) {
+void random_bot_test(string game_name)
+{
    ofstream out(game_name);
    Board b;
    RandomComputer bot1(b, WHITE), bot2(b, BLACK);
-   out << "Posizione iniziale:\n" << b << "\n\n";
-   int mossa;
+   out << "Posizione iniziale:\n"
+       << b << "\n\n";
    Ending game_over;
-   while ((game_over = b.is_game_over()) == Ending::NONE) {
-      mossa = b.mossa();
+   while ((game_over = b.is_game_over()) == Ending::NONE)
+   {
+      int mossa = b.mossa();
       if (b.turn() == WHITE)
          bot1.move();
       else
          bot2.move();
-      out << "\n\nMossa : " << mossa << endl << b << endl;
+      out << "\n\nMossa : " << mossa << endl
+          << b << endl;
    }
-   out << "\n\n\n" << b.get_pgn() << endl;
+   out << "\n\n\n"
+       << b.get_pgn() << endl;
 }
-void random_bot_test() {
+void random_bot_test()
+{
    constexpr int PARTITE = 5;
-   for (int i = 0; i < PARTITE; i++) {
+   for (int i = 0; i < PARTITE; i++)
+   {
       string game_name = "bot_test";
       // Convert the integer 'i' to a string
       game_name += to_string(i);
@@ -442,4 +469,32 @@ void random_bot_test() {
       random_bot_test(game_name);
       cout << game_name << " completed\n";
    }
+}
+
+void depth_bot_test()
+{
+   constexpr int WHITE_DEPTH = 1,
+                 BLACK_DEPTH = 1;
+   ofstream out("depth_bot_test.txt");
+   Board b;
+   DepthComputer bot1(b, WHITE, WHITE_DEPTH), bot2(b, BLACK, BLACK_DEPTH);
+   Ending game_over;
+   while ((game_over = b.is_game_over()) == Ending::NONE)
+   {
+      int mossa = b.mossa();
+      if (mossa > 300)
+         break;
+      if (b.turn() == WHITE)
+         bot1.move();
+      else
+         bot2.move();
+      out << "\n\nMossa : " << mossa << endl
+          << b;
+      if (mossa % 50 == 0)
+         out << "\n\n\npgn:\n"
+             << b.get_pgn() << "\n\n";
+      // cout << "Mossa: " << mossa << ",\t" << ending(game_over) << ",\t" << b.get_board_current_status() << endl;
+   }
+   out << "\n\n\n"
+       << b.get_pgn() << endl;
 }
